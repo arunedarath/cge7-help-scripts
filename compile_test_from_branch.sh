@@ -21,7 +21,7 @@ if [ -n "$1" ] ; then
 		exit 1
 	else
 		TEST_START_COMMIT=$1
-		commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT.. | cut -d' ' -f1 | tac)
+		commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT^.. | cut -d' ' -f1 | tac)
 		CURRENT_BRANCH=$(git branch | grep ^* | cut -d' ' -f2)
 	fi
 else
