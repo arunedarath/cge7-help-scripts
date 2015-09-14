@@ -23,12 +23,7 @@ arun@arun-OptiPlex-9010:~/work/CG7_git/mvl7kernel$ git log --pretty=oneline -6
 ==> want to start from here ==> 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b Revert "mtd: m25p80: Micron SPI uses Macronix-style 4-byte addressing"
 
 e) Run the script
-arun@arun-OptiPlex-9010:~/work/CG7_git/mvl7kernel$ ./compile_test_from_branch.sh 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b
-################ compiling apm-mustang-xgene_defconfig #####################
-
------- testing 1eb87232ab47867e01fd89cd5e0dbc6982ca8bb3 arm64: barriers: make use of barrier options with explicit barriers --------
-
-Note: checking out '1eb87232ab47867e01fd89cd5e0dbc6982ca8bb3'.
+~/work/CG7_git/mvl7kernel$ ./compile_test_from_branch.sh 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b
 
 f) The test logs are saved in the file compile_test_commits_log
 
