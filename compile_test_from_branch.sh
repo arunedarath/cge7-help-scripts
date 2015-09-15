@@ -13,25 +13,45 @@ cavium-thunder-32_defconfig:arm64:aarch64_be-gnu:Image"
 
 TC_MAIN_PATH="/home/arun/montavista/cg7/tools/"
 
-if [ -n "$1" ] ; then
-	git show $1 > /dev/null
-	rc=$?
-	if [ $rc -ne 0 ] ; then
-		echo "Please pass a git commit "
-		exit 1
-	else
-		TEST_START_COMMIT=$1
-		commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT^.. | cut -d' ' -f1 | tac)
-		CURRENT_BRANCH=$(git branch | grep ^* | cut -d' ' -f2)
-	fi
-else
-	echo "Please pass from where you want to start the test"
+error_exit()
+{
+	echo "$1"
+	echo "Exiting .."
 	exit 1
+}
+
+check_param_is_git_commit()
+{
+	param_in=$1
+
+	git show $param_in > /dev/null
+	rc=$?
+	if [ $rc -eq 0 ] ; then
+		param_val=$(git log --pretty=oneline -1 $param_in | cut -d' ' -f1)
+		if [ "${param_val:0:7}" == "${param_in:0:7}" ] ; then
+			TEST_START_COMMIT=$param_in
+			commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT^.. | cut -d' ' -f1 | tac)
+			CURRENT_BRANCH=$(git branch | grep ^* | cut -d' ' -f2)
+		else
+			error_exit "user passed param $param_in is not a git commit object"
+		fi
+	else
+		echo "Passed param "$param_in" is not a git commit"
+		error_exit "Please pass commit ID from where you want to start the test"
+	fi
+}
+
+# Start with the parameter check
+if [ -n "$1" ] ; then
+	check_param_is_git_commit $1
+else
+	error_exit "Please pass commit ID from where you want to start the test"
 fi
 
 COMPILE_TEST_LOG="compile_test_commits_log"
 echo "start" > "$COMPILE_TEST_LOG"
 
+#start the test
 for config in `echo $configs_for_test`
 do
 	TC_PATH="$TC_MAIN_PATH"
