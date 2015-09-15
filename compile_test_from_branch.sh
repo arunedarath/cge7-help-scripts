@@ -36,7 +36,7 @@ check_param_is_git_commit()
 			error_exit "user passed param $param_in is not a git commit object"
 		fi
 	else
-		echo "Passed param "$param_in" is not a git commit"
+		echo "Passed param "$param_in" is not a git commit ID"
 		error_exit "Please pass commit ID from where you want to start the test"
 	fi
 }
@@ -59,8 +59,7 @@ do
 	TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
 
 	if [ -z "$TC" ] ; then
-		echo "Unable to find the toolchain for compiling $config"
-		exit 1
+		error_exit "Unable to find the toolchain for compiling $config"
 	fi
 
 	CROSS_TC=$(echo $TC | rev | cut -d- -f2- | rev)
@@ -93,4 +92,5 @@ do
 	fi
 done
 
+echo "end" >> "$COMPILE_TEST_LOG"
 git checkout $CURRENT_BRANCH
