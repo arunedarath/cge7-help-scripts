@@ -20,6 +20,30 @@ error_exit()
 	exit 1
 }
 
+record_starting_point()
+{
+	branch_str=$(git branch | grep ^*)
+	detached=$(echo $branch_str | grep -c "(detached from *.*)")
+	if [ $detached -eq 1 ] ; then
+		echo "Starting test not in a git branch"
+		CURRENT_BRANCH=
+		DETACHED_HEAD=$(git log --pretty=oneline -1 HEAD | cut -d' ' -f1)
+	else
+		CURRENT_BRANCH=$(git branch | grep ^* | cut -d' ' -f2)
+	fi
+}
+
+return_to_starting_point()
+{
+	if [ -n "$CURRENT_BRANCH" ] ; then
+		echo "Returning to git branch:$CURRENT_BRANCH"
+		git checkout $CURRENT_BRANCH > /dev/null
+	else
+		echo "Returning to starting commit:$DETACHED_HEAD"
+		git checkout $DETACHED_HEAD
+	fi
+}
+
 check_param_is_git_commit()
 {
 	param_in=$1
@@ -31,7 +55,6 @@ check_param_is_git_commit()
 		if [ "${param_val:0:7}" == "${param_in:0:7}" ] ; then
 			TEST_START_COMMIT=$param_in
 			commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT^.. | cut -d' ' -f1 | tac)
-			CURRENT_BRANCH=$(git branch | grep ^* | cut -d' ' -f2)
 		else
 			error_exit "user passed param $param_in is not a git commit object"
 		fi
@@ -44,6 +67,7 @@ check_param_is_git_commit()
 # Start with the parameter check
 if [ -n "$1" ] ; then
 	check_param_is_git_commit $1
+	record_starting_point
 else
 	error_exit "Please pass commit ID from where you want to start the test"
 fi
@@ -73,7 +97,7 @@ do
 		for commit in `echo $commits_for_test`
 		do
 			echo -e "\n------ testing $(git log --pretty=oneline -1 $commit) --------\n"
-			git checkout $commit
+			git checkout $commit > /dev/null 2>&1
 			cp configs/$COMPILE_CONFIG .config
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
 			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC-" $MAKE_TARGET -j8 > /dev/null
@@ -93,4 +117,4 @@ do
 done
 
 echo "end" >> "$COMPILE_TEST_LOG"
-git checkout $CURRENT_BRANCH
+return_to_starting_point
