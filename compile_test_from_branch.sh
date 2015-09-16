@@ -1,11 +1,12 @@
 #!/bin/bash
 #configs_for_test is formed as given below
-#configs_to_test:config_arch:montavista_tool_chain_top_dir:make_target
+#configs_to_test:montavista_tool_chain_top_dir:make_target
 
 configs_for_test="
-apm-mustang-xgene_defconfig:arm64:armv8be-gnu:Image
-freescale-ls1043a_defconfig:arm64:armv8-gnu:Image
-cavium-thunder-32_defconfig:arm64:aarch64_be-gnu:Image"
+apm-mustang-xgene_defconfig:armv8be-gnu:Image
+freescale-ls1043a_defconfig:armv8-gnu:Image
+cavium-thunder-32_defconfig:aarch64_be-gnu:Image"
+
 
 #TC_MAIN_PATH  is the directory where your toolchains are installed
 # $ls ~/montavista/cg7/tools/
@@ -64,6 +65,36 @@ check_param_is_git_commit()
 	fi
 }
 
+identify_the_arch()
+{
+	config=$1
+	if [ -f "configs/$config" ] ; then
+		if [ $(grep -c -m 1 "^CONFIG_ARM64=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=arm64
+		elif [ $(grep -c -m 1 "^CONFIG_ARM=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=arm
+		elif [ $(grep -c -m 1 "^CONFIG_X86_32=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=x86
+		elif [ $(grep -c -m 1 "^CONFIG_X86_64=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=x86_64
+		elif [ $(grep -c -m 1 "^CONFIG_PPC32=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=powerpc
+		elif [ $(grep -c -m 1 "^CONFIG_MIPS=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=mips
+		elif [ $(grep -c -m 1 "^CONFIG_ARM64=y" configs/$config) -eq 1 ] ;then
+			COMPILE_ARCH=arm64
+		fi
+
+		if [ -z "$COMPILE_ARCH" ] ; then
+			echo "Unable to find the architecture for $config"
+		fi
+	else
+		echo "The given config $config is not there inside configs directory"
+		echo "Please pass the right defconfig file"
+		COMPILE_ARCH=
+	fi
+}
+
 # Start with the parameter check
 if [ -n "$1" ] ; then
 	check_param_is_git_commit $1
@@ -79,7 +110,7 @@ echo "start" > "$COMPILE_TEST_LOG"
 for config in `echo $configs_for_test`
 do
 	TC_PATH="$TC_MAIN_PATH"
-	TC_PATH+=$(echo $config | cut -d: -f3)
+	TC_PATH+=$(echo $config | cut -d: -f2)
 	TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
 
 	if [ -z "$TC" ] ; then
@@ -87,11 +118,13 @@ do
 	fi
 
 	CROSS_TC=$(echo $TC | rev | cut -d- -f2- | rev)
-	COMPILE_CONFIG=$(echo $config | cut -d: -f1)
-	COMPILE_ARCH=$(echo $config | cut -d: -f2)
-	MAKE_TARGET=$(echo $config | cut -d: -f4)
 
-	if [ -f "configs/$COMPILE_CONFIG" ] ; then
+	COMPILE_CONFIG=$(echo $config | cut -d: -f1)
+	MAKE_TARGET=$(echo $config | cut -d: -f3)
+
+	identify_the_arch $COMPILE_CONFIG
+
+	if [ -n "$COMPILE_ARCH" ] ; then
 		echo "################ compiling $COMPILE_CONFIG #####################"
 
 		for commit in `echo $commits_for_test`
@@ -111,8 +144,6 @@ do
 			fi
 		done
 		echo "---" >> "$COMPILE_TEST_LOG"
-	else
-		echo "$COMPILE_CONFIG is not found inside configs"
 	fi
 done
 
