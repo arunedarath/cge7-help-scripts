@@ -3,9 +3,9 @@
 #configs_to_test:montavista_tool_chain_top_dir:make_target
 
 configs_for_test="
-apm-mustang-xgene_defconfig:armv8be-gnu:Image
-freescale-ls1043a_defconfig:armv8-gnu:Image
-cavium-thunder-32_defconfig:aarch64_be-gnu:Image"
+apm-mustang-xgene_defconfig:armv8be-gnu
+freescale-ls1043a_defconfig:armv8-gnu
+cavium-thunder-32_defconfig:aarch64_be-gnu"
 
 
 #TC_MAIN_PATH  is the directory where your toolchains are installed
@@ -81,12 +81,24 @@ identify_the_arch()
 			COMPILE_ARCH=powerpc
 		elif [ $(grep -c -m 1 "^CONFIG_MIPS=y" configs/$config) -eq 1 ] ;then
 			COMPILE_ARCH=mips
-		elif [ $(grep -c -m 1 "^CONFIG_ARM64=y" configs/$config) -eq 1 ] ;then
-			COMPILE_ARCH=arm64
 		fi
 
 		if [ -z "$COMPILE_ARCH" ] ; then
 			echo "Unable to find the architecture for $config"
+		else
+			if [ "$COMPILE_ARCH" == "arm" ] ; then
+				MAKE_TARGET=Image
+			elif [ "$COMPILE_ARCH" == "arm64" ] ; then
+				MAKE_TARGET=Image
+			elif [ "$COMPILE_ARCH" == "x86" ] ; then
+				MAKE_TARGET=bzImage
+			elif [ "$COMPILE_ARCH" == "x86_64" ] ; then
+				MAKE_TARGET=bzImage
+			elif [ "$COMPILE_ARCH" == "powerpc" ] ; then
+				MAKE_TARGET=Image
+			elif [ "$COMPILE_ARCH" == "mips" ] ; then
+				MAKE_TARGET=Image
+			fi
 		fi
 	else
 		echo "The given config $config is not there inside configs directory"
@@ -120,7 +132,6 @@ do
 	CROSS_TC=$(echo $TC | rev | cut -d- -f2- | rev)
 
 	COMPILE_CONFIG=$(echo $config | cut -d: -f1)
-	MAKE_TARGET=$(echo $config | cut -d: -f3)
 
 	identify_the_arch $COMPILE_CONFIG
 
