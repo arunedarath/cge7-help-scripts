@@ -65,6 +65,45 @@ check_param_is_git_commit()
 	fi
 }
 
+tool_chain_to_use()
+{
+	config=$1
+	arch=$2
+
+	endian=$(grep -c "CONFIG_CPU_BIG_ENDIAN=y" configs/$config)
+	if [ "$endian" -eq 1 ] ; then
+		endian="BE"
+	else
+		endian="LE"
+	fi
+
+	if [ "$arch" == "arm" ] ; then
+		if ["$endian" == "LE" ] ;then
+			TC_TOP_DIR=
+		else
+			TC_TOP_DIR=
+		fi
+	elif [ "$arch" == "arm64" ] ; then
+		if ["$endian" == "LE" ] ;then
+			TC_TOP_DIR=
+		else
+			TC_TOP_DIR=
+		fi
+	elif [ "$arch" == "x86" ] ; then
+			TC_TOP_DIR=
+	elif [ "$arch" == "x86_64" ] ; then
+			TC_TOP_DIR=
+	elif [ "$arch" == "powerpc" ] ; then
+			TC_TOP_DIR=
+	elif [ "$arch" == "mips" ] ; then
+		if ["$endian" == "LE" ] ;then
+			TC_TOP_DIR=
+		else
+			TC_TOP_DIR=
+		fi
+	fi
+}
+
 identify_the_arch()
 {
 	config=$1
@@ -100,6 +139,8 @@ identify_the_arch()
 				MAKE_TARGET=Image
 			fi
 		fi
+
+		tool_chain_to_use $config $COMPILE_ARCH
 	else
 		echo "The given config $config is not there inside configs directory"
 		echo "Please pass the right defconfig file"
