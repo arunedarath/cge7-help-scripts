@@ -206,7 +206,7 @@ do
 
 			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j8 > /dev/null
 			if [ $? -ne 0 ] ; then
-				echo "compilation failed for $COMPILE_CONFIG $FAIL_COMMIT"
+				echo "compilation failed for $COMPILE_CONFIG $COMMIT_MSG"
 				echo "FAILED: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
 			else
 				echo "SUCCESS: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
