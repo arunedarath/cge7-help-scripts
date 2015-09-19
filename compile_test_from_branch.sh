@@ -184,6 +184,7 @@ fi
 
 COMPILE_TEST_LOG="compile_test_commits_log"
 echo "start" > "$COMPILE_TEST_LOG"
+echo "---" >> "$COMPILE_TEST_LOG"
 
 #start the test
 for config in `echo $configs_for_test`
@@ -193,24 +194,25 @@ do
 	identify_the_arch $COMPILE_CONFIG
 
 	if [ -n "$COMPILE_ARCH" ]  && [ -n "$CROSS_TC" ] ; then
-		echo "################ compiling $COMPILE_CONFIG #####################"
-
+		echo "~~~~~~~~~~~~~~~~~~~~~~~ compiling $COMPILE_CONFIG ~~~~~~~~~~~~~~~~~~~~~~~~"
 		for commit in `echo $commits_for_test`
 		do
-			echo -e "\n------ testing $(git log --pretty=oneline -1 $commit) --------\n"
 			git checkout $commit > /dev/null 2>&1
+			COMMIT_MSG=$(git log --pretty=oneline -1 $commit)
+			echo -e "testing ==> $COMMIT_MSG\n"
+
 			cp configs/$COMPILE_CONFIG .config
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
+
 			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j8 > /dev/null
 			if [ $? -ne 0 ] ; then
-				FAIL_COMMIT=$(git log --pretty=oneline -1 HEAD | cut -d' ' -f1-)
 				echo "compilation failed for $COMPILE_CONFIG $FAIL_COMMIT"
-				echo "FAILED: $COMPILE_CONFIG $FAIL_COMMIT" >> "$COMPILE_TEST_LOG"
+				echo "FAILED: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
 			else
-				PASS_COMMIT=$(git log --pretty=oneline -1 HEAD | cut -d' ' -f1-)
-				echo "SUCCESS: $COMPILE_CONFIG $PASS_COMMIT" >> "$COMPILE_TEST_LOG"
+				echo "SUCCESS: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
 			fi
 		done
+		echo "~~~~~~~~~~~~~~~~~~~~~~~ finished compiling $COMPILE_CONFIG ~~~~~~~~~~~~~~~~~~~~~~~~"
 		echo "---" >> "$COMPILE_TEST_LOG"
 	fi
 done
