@@ -1,11 +1,10 @@
 #!/bin/bash
-#configs_for_test is formed as given below
-#configs_to_test:montavista_tool_chain_top_dir:make_target
+#Edit configs_to_test and enter configs wanted to test
 
 configs_for_test="
-apm-mustang-xgene_defconfig:armv8be-gnu
-freescale-ls1043a_defconfig:armv8-gnu
-cavium-thunder-32_defconfig:aarch64_be-gnu"
+apm-mustang-xgene_defconfig
+freescale-ls1043a_defconfig
+cavium-thunder-32_defconfig"
 
 
 #TC_MAIN_PATH  is the directory where your toolchains are installed
@@ -78,16 +77,16 @@ tool_chain_to_use()
 	fi
 
 	if [ "$arch" == "arm" ] ; then
-		if ["$endian" == "LE" ] ;then
+		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR=
 		else
 			TC_TOP_DIR=
 		fi
 	elif [ "$arch" == "arm64" ] ; then
-		if ["$endian" == "LE" ] ;then
-			TC_TOP_DIR=
+		if [ "$endian" == "LE" ] ;then
+			TC_TOP_DIR="armv8-gnu"
 		else
-			TC_TOP_DIR=
+			TC_TOP_DIR="armv8be-gnu"
 		fi
 	elif [ "$arch" == "x86" ] ; then
 			TC_TOP_DIR=
@@ -96,10 +95,37 @@ tool_chain_to_use()
 	elif [ "$arch" == "powerpc" ] ; then
 			TC_TOP_DIR=
 	elif [ "$arch" == "mips" ] ; then
-		if ["$endian" == "LE" ] ;then
+		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR=
 		else
 			TC_TOP_DIR=
+		fi
+	fi
+
+
+	#for configs that don't follow the above rules
+	if [ "$config" == "cavium-thunder-32_defconfig" ] ; then
+		if [ "$endian" == "LE" ] ;then
+			TC_TOP_DIR="aarch64-gnu"
+		else
+			TC_TOP_DIR="aarch64_be-gnu"
+		fi
+	fi
+
+	if [ -z "$TC_TOP_DIR" ] ; then
+		echo  "Unable to find the toolchain top dir for $config"
+		CROSS_TC=
+	else
+		TC_PATH="$TC_MAIN_PATH"
+		TC_PATH+="$TC_TOP_DIR"
+		TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
+
+		if [ -z "$TC" ] ; then
+			echo  "Unable to find the cross gcc in $TC_PATH/bin"
+			CROSS_TC=
+		else
+			CROSS_TC=$(echo $TC | rev | cut -d- -f2- | rev)
+			CROSS_TC+="-"
 		fi
 	fi
 }
@@ -162,21 +188,11 @@ echo "start" > "$COMPILE_TEST_LOG"
 #start the test
 for config in `echo $configs_for_test`
 do
-	TC_PATH="$TC_MAIN_PATH"
-	TC_PATH+=$(echo $config | cut -d: -f2)
-	TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
-
-	if [ -z "$TC" ] ; then
-		error_exit "Unable to find the toolchain for compiling $config"
-	fi
-
-	CROSS_TC=$(echo $TC | rev | cut -d- -f2- | rev)
-
-	COMPILE_CONFIG=$(echo $config | cut -d: -f1)
+	COMPILE_CONFIG="$config"
 
 	identify_the_arch $COMPILE_CONFIG
 
-	if [ -n "$COMPILE_ARCH" ] ; then
+	if [ -n "$COMPILE_ARCH" ]  && [ -n "$CROSS_TC" ] ; then
 		echo "################ compiling $COMPILE_CONFIG #####################"
 
 		for commit in `echo $commits_for_test`
@@ -185,7 +201,7 @@ do
 			git checkout $commit > /dev/null 2>&1
 			cp configs/$COMPILE_CONFIG .config
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
-			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC-" $MAKE_TARGET -j8 > /dev/null
+			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j8 > /dev/null
 			if [ $? -ne 0 ] ; then
 				FAIL_COMMIT=$(git log --pretty=oneline -1 HEAD | cut -d' ' -f1-)
 				echo "compilation failed for $COMPILE_CONFIG $FAIL_COMMIT"
