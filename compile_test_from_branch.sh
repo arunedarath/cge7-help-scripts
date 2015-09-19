@@ -1,12 +1,6 @@
 #!/bin/bash
 #Edit configs_to_test and enter configs wanted to test
 
-configs_for_test="
-apm-mustang-xgene_defconfig
-freescale-ls1043a_defconfig
-cavium-thunder-32_defconfig"
-
-
 #TC_MAIN_PATH  is the directory where your toolchains are installed
 # $ls ~/montavista/cg7/tools/
 # aarch64_be-gnu  armeb-gnu  arm-gnu  armv6-gnu  armv8be-gnu  armv8-gnu  mipseb-gnu  x86_64-gnu
@@ -174,14 +168,47 @@ identify_the_arch()
 	fi
 }
 
+usage()
+{
+	echo "Usage:"
+	echo "$0 -c <commit ID from where to start the test> -d <configs to test> -o <optional log output filename>"
+	echo "option -d takes a set of configs to test seperated by space and sorrounded by quotes as given below"
+	echo "$0 -c <commit ID> -d \"apm-mustang-xgene_defconfig armeb-cortex-a15_defconfig cavium-octeon2-64_defconfig\""
+}
+
+while getopts  "c:d:o:h" OPTION
+do
+	case $OPTION in
+	h)
+		usage
+		exit 0
+		;;
+	d)
+		configs_for_test="$OPTARG"
+		;;
+	c)
+		check_param_is_git_commit "$OPTARG"
+		;;
+	o)
+		echo "Log file is $OPTARG"
+		;;
+	?)
+		usage
+		error_exit
+		;;
+	esac
+done
+
 # Start with the parameter check
-if [ -n "$1" ] ; then
-	check_param_is_git_commit $1
-	record_starting_point
-else
-	error_exit "Please pass commit ID from where you want to start the test"
+if [ -z "$configs_for_test" ] ; then
+	error_exit "No configs are selected for testing"
 fi
 
+if [ -z "$commits_for_test" ] ; then
+	error_exit "Missing test start commit ID"
+fi
+
+record_starting_point
 COMPILE_TEST_LOG="compile_test_commits_log"
 echo "start" > "$COMPILE_TEST_LOG"
 echo "---" >> "$COMPILE_TEST_LOG"
