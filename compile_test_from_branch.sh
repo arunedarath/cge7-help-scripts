@@ -64,11 +64,23 @@ tool_chain_to_use()
 	fi
 
 	if [ "$arch" == "arm" ] ; then
-		if [ "$endian" == "LE" ] ;then
-			TC_TOP_DIR="arm-gnu"
+		isa=$(grep -c "CONFIG_CPU_V7=y" configs/$config)
+		if [ "$isa" -eq 1 ] ; then
+			isa="V7"
+			if [ "$endian" == "LE" ] ;then
+				TC_TOP_DIR="arm-gnu"
+			else
+				TC_TOP_DIR="armeb-gnu"
+			fi
 		else
-			TC_TOP_DIR="armeb-gnu"
+			isa="V6"
+			if [ "$endian" == "LE" ] ;then
+				TC_TOP_DIR="armv6-gnu"
+			else
+				TC_TOP_DIR="armv6eb-gnu"
+			fi
 		fi
+
 	elif [ "$arch" == "arm64" ] ; then
 		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR="armv8-gnu"
