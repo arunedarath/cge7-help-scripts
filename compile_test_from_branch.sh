@@ -1,11 +1,6 @@
 #!/bin/bash
 #Edit configs_to_test and enter configs wanted to test
 
-#TC_MAIN_PATH  is the directory where your toolchains are installed
-# $ls ~/montavista/cg7/tools/
-# aarch64_be-gnu  armeb-gnu  arm-gnu  armv6-gnu  armv8be-gnu  armv8-gnu  mipseb-gnu  x86_64-gnu
-
-TC_MAIN_PATH="/home/arun/montavista/cg7/tools/"
 
 error_exit()
 {
@@ -170,13 +165,19 @@ identify_the_arch()
 
 usage()
 {
-	echo "Usage:"
-	echo "$0 -c <commit ID from where to start the test> -d <configs to test> -o <optional log output filename>"
-	echo "option -d takes a set of configs to test seperated by space and sorrounded by quotes as given below"
-	echo "$0 -c <commit ID> -d \"apm-mustang-xgene_defconfig armeb-cortex-a15_defconfig cavium-octeon2-64_defconfig\""
+	echo "Usage: compile_test_from_branch.sh [Options]"
+	echo "Compile tests CGE7 kernel starting from a user specified commit ID for the requested configs"
+	echo -e "\nEg: \$$0 -c <start commit ID> -d <configs to test> -o <test log file> -t <montavista toolchain installation dir>"
+	echo -e "\nOptions:"
+	echo -e "\t -c, git commit ID from where the compilation test will start"
+	echo -e "\t -d, defconfigs for the compile test"
+	echo -e "\t     User can test more than one defconfigs by separating them with space and using double quotes"
+	echo -e "\t     Eg: \$$0 -d \"config1 config2 config3\""
+	echo -e "\t -t, Directory where montavista toolchains are installed"
+	echo -e "\t -o, Optional test log output file. If not specified logs will be saved in a default file"
 }
 
-while getopts  "c:d:o:h" OPTION
+while getopts  "c:d:o:t:h" OPTION
 do
 	case $OPTION in
 	h)
@@ -188,6 +189,12 @@ do
 		;;
 	c)
 		check_param_is_git_commit "$OPTARG"
+		;;
+	t)
+#TC_MAIN_PATH  is the directory where your toolchains are installed
+# $ls ~/montavista/cg7/tools/
+# aarch64_be-gnu  armeb-gnu  arm-gnu  armv6-gnu  armv8be-gnu  armv8-gnu  mipseb-gnu  x86_64-gnu
+		TC_MAIN_PATH="$OPTARG"
 		;;
 	o)
 		echo "Log file is $OPTARG"
@@ -206,6 +213,10 @@ fi
 
 if [ -z "$commits_for_test" ] ; then
 	error_exit "Missing test start commit ID"
+fi
+
+if [ -z "$TC_MAIN_PATH" ] ; then
+	error_exit "You did not specify the toolchain path. I can't do compilation without a cross toolchain"
 fi
 
 record_starting_point
