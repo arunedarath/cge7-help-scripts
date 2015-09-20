@@ -75,12 +75,10 @@ tool_chain_to_use()
 		else
 			TC_TOP_DIR="armv8be-gnu"
 		fi
-	elif [ "$arch" == "x86" ] ; then
-			TC_TOP_DIR=
-	elif [ "$arch" == "x86_64" ] ; then
-			TC_TOP_DIR=
+	elif [ "$arch" == "x86" ] || [ "$arch" == "x86_64" ] ; then
+		TC_TOP_DIR="x86_64-gnu"
 	elif [ "$arch" == "powerpc" ] ; then
-			TC_TOP_DIR=
+		TC_TOP_DIR=
 	elif [ "$arch" == "mips" ] ; then
 		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR=
