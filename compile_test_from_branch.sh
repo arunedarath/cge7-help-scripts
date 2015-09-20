@@ -197,7 +197,7 @@ do
 		TC_MAIN_PATH="$OPTARG"
 		;;
 	o)
-		echo "Log file is $OPTARG"
+		COMPILE_TEST_LOG="$OPTARG"
 		;;
 	?)
 		usage
@@ -219,8 +219,11 @@ if [ -z "$TC_MAIN_PATH" ] ; then
 	error_exit "You did not specify the toolchain path. I can't do compilation without a cross toolchain"
 fi
 
+if [ -z "$COMPILE_TEST_LOG" ] ; then
+	COMPILE_TEST_LOG="compile_test_commits_log"
+fi
+
 record_starting_point
-COMPILE_TEST_LOG="compile_test_commits_log"
 echo "start" > "$COMPILE_TEST_LOG"
 echo "---" >> "$COMPILE_TEST_LOG"
 
@@ -257,3 +260,8 @@ done
 
 echo "end" >> "$COMPILE_TEST_LOG"
 return_to_starting_point
+echo ""
+echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+echo "Test results are saved in file $COMPILE_TEST_LOG"
+echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+echo ""
