@@ -65,9 +65,9 @@ tool_chain_to_use()
 
 	if [ "$arch" == "arm" ] ; then
 		if [ "$endian" == "LE" ] ;then
-			TC_TOP_DIR=
+			TC_TOP_DIR="arm-gnu"
 		else
-			TC_TOP_DIR=
+			TC_TOP_DIR="armeb-gnu"
 		fi
 	elif [ "$arch" == "arm64" ] ; then
 		if [ "$endian" == "LE" ] ;then
