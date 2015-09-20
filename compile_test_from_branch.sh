@@ -268,6 +268,9 @@ do
 		done
 		echo "~~~~~~~~~~~~~~~~~~~~~~~ finished compiling $COMPILE_CONFIG ~~~~~~~~~~~~~~~~~~~~~~~~"
 		echo "---" >> "$COMPILE_TEST_LOG"
+	else
+		echo "Something wrong didn't perform test for $COMPILE_CONFIG" >> "$COMPILE_TEST_LOG"
+		echo "---" >> "$COMPILE_TEST_LOG"
 	fi
 done
 
