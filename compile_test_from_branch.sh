@@ -248,6 +248,7 @@ do
 
 	if [ -n "$COMPILE_ARCH" ]  && [ -n "$CROSS_TC" ] ; then
 		echo "~~~~~~~~~~~~~~~~~~~~~~~ compiling $COMPILE_CONFIG ~~~~~~~~~~~~~~~~~~~~~~~~"
+		echo "Cross toolchain used: $CROSS_TC" >> "$COMPILE_TEST_LOG"
 		for commit in `echo $commits_for_test`
 		do
 			git checkout $commit > /dev/null 2>&1
