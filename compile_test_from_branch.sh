@@ -1,6 +1,4 @@
 #!/bin/bash
-#Edit configs_to_test and enter configs wanted to test
-
 
 error_exit()
 {
@@ -220,7 +218,11 @@ if [ -z "$TC_MAIN_PATH" ] ; then
 fi
 
 if [ -z "$COMPILE_TEST_LOG" ] ; then
-	COMPILE_TEST_LOG="compile_test_commits_log"
+	log_file="compile_test_commits_"
+	log_file+=$(date +"%a %b %d %T %Y" | tr " " _ | tr ":" _ | tr '[:upper:]' '[:lower:]')
+	log_file+="_log_"
+	log_file+="$RANDOM"
+	COMPILE_TEST_LOG="$log_file"
 fi
 
 record_starting_point
@@ -240,7 +242,7 @@ do
 		do
 			git checkout $commit > /dev/null 2>&1
 			COMMIT_MSG=$(git log --pretty=oneline -1 $commit)
-			echo -e "testing ==> $COMMIT_MSG\n"
+			echo -e "\ntesting ==> $COMMIT_MSG"
 
 			cp configs/$COMPILE_CONFIG .config
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
@@ -261,7 +263,7 @@ done
 echo "end" >> "$COMPILE_TEST_LOG"
 return_to_starting_point
 echo ""
-echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 echo "Test results are saved in file $COMPILE_TEST_LOG"
-echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+echo '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 echo ""
