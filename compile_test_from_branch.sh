@@ -95,7 +95,7 @@ tool_chain_to_use()
 		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR=
 		else
-			TC_TOP_DIR=
+			TC_TOP_DIR="mipseb-gnu"
 		fi
 	fi
 
@@ -115,7 +115,18 @@ tool_chain_to_use()
 	else
 		TC_PATH="$TC_MAIN_PATH"
 		TC_PATH+="$TC_TOP_DIR"
-		TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
+
+# mips has two gccs in the toolchain directory mips64-octeon-linux-gnu-gcc and
+# mipsisa64-octeon-elf-gcc this confuses the below logic so hardcode it to
+# mips64-octeon-linux-gnu-gcc for mips
+		if [ "$arch" == "mips" ] ; then
+			TC="$TC_PATH/bin/mips64-octeon-linux-gnu-gcc"
+			if [ ! -f "$TC" ] ; then
+				TC=
+			fi
+		else
+			TC=$(find "$TC_PATH/bin" | grep '.*.-gcc$')
+		fi
 
 		if [ -z "$TC" ] ; then
 			echo  "Unable to find the cross gcc in $TC_PATH/bin"
@@ -159,7 +170,7 @@ identify_the_arch()
 			elif [ "$COMPILE_ARCH" == "powerpc" ] ; then
 				MAKE_TARGET=Image
 			elif [ "$COMPILE_ARCH" == "mips" ] ; then
-				MAKE_TARGET=Image
+				MAKE_TARGET=vmlinux
 			fi
 		fi
 
