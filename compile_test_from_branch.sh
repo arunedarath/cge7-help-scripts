@@ -182,6 +182,18 @@ identify_the_arch()
 	fi
 }
 
+check_if_num()
+{
+	param="$1";
+
+	num='^[0-9]+$'
+	if [[ $param =~ $num ]] ; then
+		IT_IS_NUMBER="yes"
+	else
+		IT_IS_NUMBER="no"
+	fi
+}
+
 usage()
 {
 	echo "Usage: compile_test_from_branch.sh [Options]"
@@ -194,9 +206,10 @@ usage()
 	echo -e "\t     Eg: \$$0 -d \"config1 config2 config3\""
 	echo -e "\t -t, Directory where montavista toolchains are installed"
 	echo -e "\t -o, Optional test log output file. If not specified logs will be saved in a default file"
+	echo -e "\t -p, How many parallel make to perform. It ths passed to make as -j<param>"
 }
 
-while getopts  "c:d:o:t:h" OPTION
+while getopts  "c:d:o:t:p:h" OPTION
 do
 	case $OPTION in
 	h)
@@ -217,6 +230,15 @@ do
 		;;
 	o)
 		COMPILE_TEST_LOG="$OPTARG"
+		;;
+	p)
+		check_if_num $OPTARG
+		if [ "$IT_IS_NUMBER" == "yes" ] ; then
+			PARALLEL_MAKE="$OPTARG"
+		else
+			echo "Parallel make parameter passed is not a number, setting it to 8"
+			PARALLEL_MAKE="8"
+		fi
 		;;
 	?)
 		usage
@@ -269,7 +291,7 @@ do
 			cp configs/$COMPILE_CONFIG .config
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
 
-			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j8 > /dev/null
+			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j$PARALLEL_MAKE > /dev/null
 			if [ $? -ne 0 ] ; then
 				echo "compilation failed for $COMPILE_CONFIG $COMMIT_MSG"
 				echo "FAILED: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
