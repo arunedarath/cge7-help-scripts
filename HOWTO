@@ -1,14 +1,18 @@
-using  compile_test_from_branch.sh:
-------------------------------------
+Using  compile_test_from_branch.sh
+----------------------------------
+
 This script can be used to compile test the commits to
 make sure that they are not breaking the build.
 
-a) Checkout to the branch where you want to conduct the test
+1) Copy the script to the CGE7 kernel directory
+$ cp compile_test_from_branch.sh ~/work/CG7_git/mvl7kernel
+
+2) Checkout to the branch where you want to conduct the test
 $ git checkout 61075_compile_test
 
-b) Decide the configs required for testing
+3) Decide the configs required for testing
 
-c) Identify the commit from where you want to start the test
+4) Identify the commit from where you want to start the test
 
 arun@arun-OptiPlex-9010:~/work/CG7_git/mvl7kernel$ git log --pretty=oneline -6
 2e4a64db1856cc14077777aef22d8b2ee3b73b65 ARM64: Use IPI for cross CPU TLB invalidate.
@@ -18,12 +22,12 @@ arun@arun-OptiPlex-9010:~/work/CG7_git/mvl7kernel$ git log --pretty=oneline -6
 1eb87232ab47867e01fd89cd5e0dbc6982ca8bb3 arm64: barriers: make use of barrier options with explicit barriers
 ==> want to start from here ==> 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b Revert "mtd: m25p80: Micron SPI uses Macronix-style 4-byte addressing"
 
-d) Run the script
+5) Run the script
 $./compile_test_from_branch.sh -d "altera-arria5-vst_defconfig ericsson-cham_defconfig xilinx-zynq-le_defconfig" -c 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b -t ~/montavista/cg7/tools/
 
 Note: -t is the directory where montavista toolchains are installed
 
-e) The test logs are saved into a file
+6) The test logs are saved into a file
 
 If anybody find any problems running the script/[make improvement to it] please
 mail me.
