@@ -260,6 +260,12 @@ if [ -z "$TC_MAIN_PATH" ] ; then
 	error_exit "You did not specify the toolchain path. I can't do compilation without a cross toolchain"
 fi
 
+if [ -z "$PARALLEL_MAKE" ] ; then
+	num_cores=$(nproc)
+	PARALLEL_MAKE="$num_cores"
+	echo "Using number of cores($PARALLEL_MAKE) as argument for parallel make"
+fi
+
 if [ -z "$COMPILE_TEST_LOG" ] ; then
 	log_file="compile_test_commits_"
 	log_file+=$(date +"%a %b %d %T %Y" | tr " " _ | tr ":" _ | tr '[:upper:]' '[:lower:]')
