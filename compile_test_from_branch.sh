@@ -194,6 +194,11 @@ check_if_num()
 	fi
 }
 
+select_all_configs_for_test()
+{
+	configs_for_test=$(ls configs | sort)
+}
+
 usage()
 {
 	echo "Usage: compile_test_from_branch.sh [Options]"
@@ -207,6 +212,7 @@ usage()
 	echo -e "\t -t, Directory where montavista toolchains are installed"
 	echo -e "\t -o, Optional test log output file. If not specified logs will be saved in a default file"
 	echo -e "\t -p, How many parallel make to perform. It ths passed to make as -j<param>"
+	echo -e "\t -a, Select all configs in the 'configs' folder for testing"
 }
 
 while getopts  "c:d:o:t:p:h" OPTION
@@ -239,6 +245,9 @@ do
 			echo "Parallel make parameter passed is not a number, setting it to 8"
 			PARALLEL_MAKE="8"
 		fi
+		;;
+	a)
+		select_all_configs_for_test
 		;;
 	?)
 		usage
