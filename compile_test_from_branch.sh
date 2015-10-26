@@ -90,7 +90,17 @@ tool_chain_to_use()
 	elif [ "$arch" == "x86" ] || [ "$arch" == "x86_64" ] ; then
 		TC_TOP_DIR="x86_64-gnu"
 	elif [ "$arch" == "powerpc" ] ; then
-		TC_TOP_DIR=
+		temp=$(grep -wc "CONFIG_PPC_E500MC=y" configs/$config)
+		if [ "$temp" -eq 1 ] ; then
+			TC_TOP_DIR="powerpc64-gnu"
+		else
+			temp=$(grep -wc "CONFIG_E500=y" configs/$config)
+			if [ "$temp" -eq 1 ] ; then
+				TC_TOP_DIR="powerpc-gnu"
+			else
+				TC_TOP_DIR="powerpc32-nfp-gnu"
+			fi
+		fi
 	elif [ "$arch" == "mips" ] ; then
 		if [ "$endian" == "LE" ] ;then
 			TC_TOP_DIR=
@@ -168,7 +178,7 @@ identify_the_arch()
 			elif [ "$COMPILE_ARCH" == "x86_64" ] ; then
 				MAKE_TARGET=bzImage
 			elif [ "$COMPILE_ARCH" == "powerpc" ] ; then
-				MAKE_TARGET=Image
+				MAKE_TARGET=zImage
 			elif [ "$COMPILE_ARCH" == "mips" ] ; then
 				MAKE_TARGET=vmlinux
 			fi
