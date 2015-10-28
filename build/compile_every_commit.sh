@@ -211,7 +211,7 @@ select_all_configs_for_test()
 
 usage()
 {
-	echo "Usage: compile_test_from_branch.sh [Options]"
+	echo "Usage: compile_every_commit.sh [Options]"
 	echo "Compile tests CGE7 kernel starting from a user specified commit ID for the requested configs"
 	echo -e "\nEg: \$$0 -c <start commit ID> -d <configs to test> -o <test log file> -t <montavista toolchain installation dir>"
 	echo -e "\nOptions:"

@@ -1,11 +1,11 @@
-Using  compile_test_from_branch.sh
-----------------------------------
+Using  compile_every_commit.sh:
+-------------------------------
 
 This script can be used to compile test the commits to
 make sure that they are not breaking the build.
 
 1) Copy the script to the CGE7 kernel directory
-$ cp compile_test_from_branch.sh ~/work/CG7_git/mvl7kernel
+$ cp compile_every_commit.sh ~/work/CG7_git/mvl7kernel
 
 2) Checkout to the branch where you want to conduct the test
 $ git checkout 61075_compile_test
@@ -23,11 +23,10 @@ arun@arun-OptiPlex-9010:~/work/CG7_git/mvl7kernel$ git log --pretty=oneline -6
 ==> want to start from here ==> 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b Revert "mtd: m25p80: Micron SPI uses Macronix-style 4-byte addressing"
 
 5) Run the script
-$./compile_test_from_branch.sh -d "altera-arria5-vst_defconfig ericsson-cham_defconfig xilinx-zynq-le_defconfig" -c 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b -t ~/montavista/cg7/tools/
+$./compile_every_commit.sh -d "altera-arria5-vst_defconfig ericsson-cham_defconfig xilinx-zynq-le_defconfig" -c 36547ff1be87d2ca6de4fbd42eb1a316ec4b584b -t ~/montavista/cg7/tools/
 
 Note: -t is the directory where montavista toolchains are installed
 
 6) The test logs are saved into a file
 
-If anybody find any problems running the script/[make improvement to it] please
-mail me.
+If anybody find any problems running the script/[make improvement to it] please mail me.
