@@ -1,0 +1,38 @@
+Run hotplug.sh as given below
+
+$./hotplug.sh arg1 arg2
+
+arg1: How many CPUs to hotplug
+arg2: How many seconds to perform the test
+
+Eg:
+root@freescale-ls1043a:~# ./hotplug.sh 4 100
+----------------- CPU hotplug test starting ---------------------
+Making all CPUs online
+stress: info: [3243] dispatching hogs: 16 cpu, 0 io, 0 vm, 0 hdd
+Will do hotplug test for 100 seconds
+~~~~~~~~~~
+Testing 1
+~~~~~~~~~~
+Offlining CPUS:2 1 3 
+stat of online CPUs:
+Average:     CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal 
+%guest  %gnice   %idle
+Average:     all  100.00    0.00    0.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+Average:       0  100.00    0.00    0.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+
+stat of all CPUs:
+Average:     CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal 
+%guest  %gnice   %idle
+Average:     all   99.75    0.00    0.25    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+Average:       0  100.00    0.00    0.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+Average:       1  100.00    0.00    0.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+Average:       2  100.00    0.00    0.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
+Average:       3   99.00    0.00    1.00    0.00    0.00    0.00    0.00   
+0.00    0.00    0.00
