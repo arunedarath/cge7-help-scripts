@@ -1,0 +1,21 @@
+serial_port_tarsierar.sh
+~~~~~~~~~~~~~~~~~~~~~~~~
+The script can be used to access tarsierar ports directly.
+
+Usage:
+	$serial_port_tarsierar.sh <TarsierAr port number from ferret target page>
+Eg:
+	$ ./serial_port_tarsierar.sh 31
+	connecting to tarsierar:7031
+
+	Sucess!!! Press Enter
+	root@Kangaroo:~#
+
+	>>>>>
+	$ ./serial_port_tarsierar.sh 31
+	connecting to tarsierar:7031
+
+	ttyS31 is used by 15908 in tarsierar; Trying to connect by closing the existing user
+	Successfully logged into tarsierar to kill 15908
+	Sucess!!! Press Enter
+	root@Kangaroo:~#
