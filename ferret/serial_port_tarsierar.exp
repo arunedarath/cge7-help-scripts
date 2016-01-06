@@ -44,6 +44,7 @@ if {[llength $argv] > 0 && [llength $argv] < 3} {
 
 send_user "connecting to $server:$port\n"
 spawn -noecho telnet $server $port
+sleep 2
 expect {
 	"Connection closed by foreign host." {
 		set rc [catch {exec grep -o "(pid=.*.)" << $expect_out(buffer)} output ]
@@ -60,6 +61,11 @@ expect {
 
 	"telnet: Unable to connect to remote host: Connection refused" {
 		port_error
+	}
+
+	"Connected to qafarmtx30-68.mvista.com." {
+		send_user "Success!!! Press Enter\n"
+		interact
 	}
 }
 
@@ -84,13 +90,13 @@ if { $pid > 0 && $force == 1 } {
 		}
 	}
 
-#Now nobody is using the serial respawn
-spawn -noecho telnet $server $port
+	#Now nobody is using the serial respawn
+	spawn -noecho telnet $server $port
+	expect "Connected to qafarmtx30-68.mvista.com." {
+		send_user "Success!!! Press Enter\n"
+		interact
+	}
 } elseif { $pid > 0 && $force == 0 } {
 	send_user "ttyS$port_var is used by pid:$pid in $server; Use -f for overriding\n"
 	usage
 }
-
-expect "Connected to qafarmtx30-68.mvista.com."
-send_user "Success!!! Press Enter\n"
-interact
