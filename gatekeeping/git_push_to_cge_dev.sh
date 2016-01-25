@@ -1,6 +1,6 @@
 usage()
 {
-	echo "Usage:"
+	echo -e "\nUsage:"
 	echo "	git_merge_to_dev_branch.sh <branch name to merge> <no of patches to merge>"
 	exit 1
 }
@@ -18,8 +18,8 @@ check_the_branch()
 	rc=$?
 
 	if [ $rc -ne 0 ] ; then
-		echo "The branch $tmp_br is not seen when 'git branch -r is run'"
-		echo "Please try after updating(git pull) the local repository"
+		echo -e "\nThe branch $tmp_br is not seen when 'git branch -r is run'"
+		echo -e "Please pass the correct name of bugfix branch"
 		usage
 	fi
 
@@ -61,9 +61,28 @@ populate_local_br()
 		cherry_commit=$(git log -1 --pretty=oneline "$merge_br""~$i" | cut -d' ' -f1)
 		echo "Cherry-picking $(git log -1 --pretty=oneline $cherry_commit)"
 		git cherry-pick -s "$cherry_commit"
+		rc=$?
+
+		if [ $rc -ne 0 ] ; then
+			echo "Git cherry-pick failed; Please verify the changes; exiting"
+			exit 1
+		fi
 	done
 }
 
+update_the_repo()
+{
+	echo "Updating the remote branches"
+	git fetch origin
+	rc=$?
+
+	if [ $rc -ne 0 ] ; then
+		echo "Something is wrong; Seems git fetch is not working; exiting"
+		exit 1
+	fi
+}
+
+update_the_repo
 check_the_branch $1
 check_no_of_commits_to_merge $2
 
