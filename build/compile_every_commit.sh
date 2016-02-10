@@ -39,16 +39,18 @@ check_param_is_git_commit()
 	rc=$?
 	if [ $rc -eq 0 ] ; then
 		param_val=$(git log --pretty=oneline -1 $param_in | cut -d' ' -f1)
-		if [ "${param_val:0:7}" == "${param_in:0:7}" ] ; then
-			TEST_START_COMMIT=$param_in
-			commits_for_test=$(git log --pretty=oneline $TEST_START_COMMIT^.. | cut -d' ' -f1 | tac)
-		else
+		if [ "${param_val:0:7}" != "${param_in:0:7}" ] ; then
 			error_exit "user passed param $param_in is not a git commit object"
 		fi
 	else
 		echo "Passed param "$param_in" is not a git commit ID"
 		error_exit "Please pass commit ID from where you want to start the test"
 	fi
+}
+
+git_commits_to_test()
+{
+	commits_for_test=$(git log --pretty=oneline "$TEST_START_COMMIT""^..""$TEST_END_COMMIT" | cut -d' ' -f1 | tac)
 }
 
 tool_chain_to_use()
@@ -216,6 +218,7 @@ usage()
 	echo -e "\nEg: \$$0 -c <start commit ID> -d <configs to test> -o <test log file> -t <montavista toolchain installation dir>"
 	echo -e "\nOptions:"
 	echo -e "\t -c, git commit ID from where the compilation test will start"
+	echo -e "\t -e, git commit ID to end the test"
 	echo -e "\t -d, defconfigs for the compile test"
 	echo -e "\t     User can test more than one defconfigs by separating them with space and using double quotes"
 	echo -e "\t     Eg: \$$0 -d \"config1 config2 config3\""
@@ -225,7 +228,7 @@ usage()
 	echo -e "\t -a, Select all configs in the 'configs' folder for testing"
 }
 
-while getopts  "c:d:o:t:p:h" OPTION
+while getopts  "c:d:o:t:p:e:h" OPTION
 do
 	case $OPTION in
 	h)
@@ -237,6 +240,11 @@ do
 		;;
 	c)
 		check_param_is_git_commit "$OPTARG"
+		TEST_START_COMMIT="$OPTARG"
+		;;
+	e)
+		check_param_is_git_commit "$OPTARG"
+		TEST_END_COMMIT="$OPTARG"
 		;;
 	t)
 #TC_MAIN_PATH  is the directory where your toolchains are installed
@@ -267,9 +275,16 @@ do
 done
 
 # Start with the parameter check
+if [ -z "$TEST_END_COMMIT" ] ; then
+	echo "Taking HEAD as the end commit"
+	TEST_END_COMMIT=$(git log --pretty=oneline  -1 | cut -d' ' -f1)
+fi
+
 if [ -z "$configs_for_test" ] ; then
 	error_exit "No configs are selected for testing"
 fi
+
+git_commits_to_test
 
 if [ -z "$commits_for_test" ] ; then
 	error_exit "Missing test start commit ID"
