@@ -47,7 +47,7 @@ check_no_of_commits_to_merge()
 
 REPO_MERG_BR="mvl7-3.10/cge_dev"
 ORIGIN_BR="origin/""$REPO_MERG_BR"
-LOCAL_BR="local_""$REPO_MERG_BR""_$RANDOM"
+LOCAL_BR="local_"$RANDOM"_""$REPO_MERG_BR"
 create_local_merg_br()
 {
 	echo "Creating local branch \"$LOCAL_BR\""
