@@ -228,7 +228,7 @@ usage()
 	echo -e "\t -a, Select all configs in the 'configs' folder for testing"
 }
 
-while getopts  "c:d:o:t:p:e:h" OPTION
+while getopts  "c:d:o:t:p:e:ah" OPTION
 do
 	case $OPTION in
 	h)
@@ -275,6 +275,12 @@ do
 done
 
 # Start with the parameter check
+if [ -z "$TEST_START_COMMIT" ] ; then
+	echo "Testing compilation for HEAD!!!!!!!!!!!!!!"
+	TEST_START_COMMIT=$(git log --pretty=oneline  -1 | cut -d' ' -f1)
+	TEST_END_COMMIT=$TEST_START_COMMIT
+fi
+
 if [ -z "$TEST_END_COMMIT" ] ; then
 	echo "Taking HEAD as the end commit"
 	TEST_END_COMMIT=$(git log --pretty=oneline  -1 | cut -d' ' -f1)
