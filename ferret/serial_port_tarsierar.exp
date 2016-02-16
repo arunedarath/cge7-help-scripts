@@ -34,7 +34,11 @@ if {[llength $argv] > 0 && [llength $argv] < 3} {
 			set force 1
 		} else {
 			set port_var $arg
-			set port "70$port_var"
+			if { $port_var < 10 } {
+				set port "700$port_var"
+			} else {
+				set port "70$port_var"
+			}
 		}
 	}
 } else {
