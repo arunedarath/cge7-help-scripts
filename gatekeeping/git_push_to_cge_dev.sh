@@ -47,9 +47,17 @@ check_no_of_commits_to_merge()
 
 REPO_MERG_BR="mvl7-3.10/cge_dev"
 ORIGIN_BR="origin/""$REPO_MERG_BR"
-LOCAL_BR="local_"$RANDOM"_""$REPO_MERG_BR"
+
+find_the_bug_no_in_merge()
+{
+	bugz=$(git log -$merg_commits $merge_br | sed -n '/Source:/,/Type:/p' | sed -n 2~3p | sed 's/ //g' | uniq | cut -d: -f2 | tr '\n' '_')
+	echo "######### The bug number for merge branch ${bugz::-1} ############"
+}
+
 create_local_merg_br()
 {
+	find_the_bug_no_in_merge
+	LOCAL_BR="local_gk_bugno_"$bugz""$RANDOM"_""$REPO_MERG_BR"
 	echo "Creating local branch \"$LOCAL_BR\""
 	git checkout -b "$LOCAL_BR" "$ORIGIN_BR"
 }
