@@ -75,8 +75,8 @@ expect {
 
 if { $pid > 0 && $force == 1 } {
 	send_user "ttyS$port_var is used by $pid in $server; Trying to connect by closing the existing user\n"
+	set timeout 20
 	spawn ssh -l root $server
-	sleep 1
 	expect {
 		"Password: " {
 			send "$password\r";
@@ -91,6 +91,10 @@ if { $pid > 0 && $force == 1 } {
 			send_user "Successfully logged into $server to kill $pid\n";
 			send "exit\r"
 			expect "Connection to tarsierar closed."
+		}
+		timeout {
+			send_user "timed out while connecting to $server. exiting ...\n"
+			exit 1
 		}
 	}
 
