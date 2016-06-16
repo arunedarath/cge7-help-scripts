@@ -56,8 +56,17 @@ do
 					f_1=$(echo $first_line | awk -F" @@ " '{print $2}')
 					f_2=$(echo $second_line | awk -F" @@ " '{print $2}')
 					if [ -z "$f_1" ] || [ -z "$f_2" ] ; then
-						new_change+=$(echo $first_line)
-						new_change+=$(echo $second_line)
+						# Now eliminate lines like the below ones
+						# -@@ -52,7 +52,7 @@
+						# +@@ -50,7 +50,7 @@
+
+						f_1=$(echo $first_line | awk -F"@@" '{print $2}')
+						f_2=$(echo $second_line | awk -F"@@" '{print $2}')
+
+						if [ -z "$f_1" ] || [ -z "$f_2" ] ; then
+							new_change+=$(echo $first_line)
+							new_change+=$(echo $second_line)
+						fi
 					elif [ "$f_1" != "$f_2" ] ; then
 						new_change+=$(echo "$first_line")
 						new_change+=$(echo "$second_line")
