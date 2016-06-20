@@ -17,11 +17,15 @@ fi
 #ChangeID: 2d87bbd634b0fe5aa2285fd2a095867158fb2cc3
 #Description:
 
-source_str="Source: http://git.kernel.org"
+source_str1="Source: http://git.kernel.org"
+source_str2="Source: kernel.org"
 mr_str="MR: [0-9].*[0-9]"
 type_str="Type: Integration"
 disp_str_1="Disposition: Backport from kernel.org "
+disp_str_2="Disposition: Backport from "
 desc_str="Description:"
+
+ITS_A_KO_PATCH="yes"
 
 check_line()
 {
@@ -29,8 +33,9 @@ check_line()
 	line=$(echo "$extract_h" | sed -n "$line_no","$line_no"p)
 
 	if [ "$line_no" == "1" ] ; then
-		if [ "$line" != "$source_str" ] ; then
+		if [ "$line" != "$source_str1" ] && [ "$line" != "$source_str2" ] ; then
 			echo "!!!!!!!!!!! source line mismatch in $patch"
+			ITS_A_KO_PATCH="no"
 		fi
 	elif [ "$line_no" == "2" ] ; then
 		rc=$(echo "$line" | grep -c "$mr_str")
@@ -51,8 +56,9 @@ check_line()
 			echo "!!!!!!!!!!!  changeid $git_commit may be wrong in $patch"
 		else
 			git_desc=$(echo $git_desc_str |  cut -d~ -f1)
-			disp_str="$disp_str_1""$git_desc"
-			if [ "$disp_str_saved" != "$disp_str" ] ; then
+			disp_str1="$disp_str_1""$git_desc"
+			disp_str2="$disp_str_2""$git_desc"
+			if [ "$disp_str_saved" != "$disp_str1" ] && [ "$disp_str_saved" != "$disp_str2" ]; then
 				echo "!!!!!!!!!!! Disposition line mismatch in $patch"
 			fi
 		fi
@@ -68,8 +74,18 @@ check_mv_header()
 	extract_h=$(cat $1 | sed -n 1,20p | sed -n '/Source:/,/Description:/p')
 	for i in 1 2 3 4 5 6
 	do
-		check_line "$i"
+		if [ "$i" -eq 1 ] ; then
+			check_line "$i"
+		else
+			if [ "$ITS_A_KO_PATCH" == "yes" ] ; then
+				check_line "$i"
+			fi
+		fi
 	done
+
+	if [ "$ITS_A_KO_PATCH" == "no" ] ; then
+		echo "$patch is not a KO cherrypicked skipping ^^^^^^^^^^"
+	fi
 }
 
 check_mv_header $patch
