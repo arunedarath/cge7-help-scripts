@@ -1,0 +1,50 @@
+#!/usr/bin/expect
+
+set dev [lindex $argv 0]
+set repeat [lindex $argv 1]
+set timeout -1
+
+spawn -noecho minicom -D /dev/$dev
+
+set count 1;
+while {$count < $repeat } {
+
+	expect "buildroot login: "
+	#start logging
+	log_file test_log.txt
+	puts "---------------------------------> reboot count : $count <------------------------------------ \n"
+	send_log "~~~~~~~~~~~~~~~~~ reboot count = $count ~~~~~~~~~~~~~~~~~~~~\n"
+	send "root\r"
+	expect "# "
+	send "\r"
+	expect "# "
+	send "dmesg | grep -i dmar\r"
+
+
+	send "./engage.sh &\r"
+	sleep 5
+	send "\r"
+	expect "# "
+	send "echo c > /proc/sysrq-trigger\r"
+	#stop logging
+	log_file
+
+
+	expect "buildroot login: "
+	#start logging
+	log_file test_log.txt
+	send "root\r"
+	expect "# "
+
+	send_user " ^^^^^^^^^^^^^^^^^^^ Entered crash kernel ^^^^^^^^^^^^^^^^^^^^^^^^ \n"
+	send "\r"
+	expect "# "
+	send "dmesg | grep -i dmar\r"
+	sleep 1
+	send "\r"
+	expect "# "
+	send "reboot\r"
+	#stop logging
+	log_file
+	set count [expr $count+1];
+}
