@@ -55,6 +55,11 @@ git_commits_to_test()
 
 tool_chain_to_use()
 {
+
+	if [ "$TC_MAIN_PATH" == "Custom" ] ; then
+		return
+	fi
+
 	config=$1
 	arch=$2
 
@@ -226,9 +231,11 @@ usage()
 	echo -e "\t -o, Optional test log output file. If not specified logs will be saved in a default file"
 	echo -e "\t -p, How many parallel make to perform. It ths passed to make as -j<param>"
 	echo -e "\t -a, Select all configs in the 'configs' folder for testing"
+	echo -e "\t -x, Pass a custom toolchain for the test"
+	echo -e "\t -y, Pass the architecture here"
 }
 
-while getopts  "c:d:o:t:p:e:ah" OPTION
+while getopts  "c:d:o:t:p:e:x:y:ah" OPTION
 do
 	case $OPTION in
 	h)
@@ -266,6 +273,15 @@ do
 		;;
 	a)
 		select_all_configs_for_test
+		;;
+	x)
+		echo "Got a custom tc"
+		TC_MAIN_PATH="Custom"
+		CROSS_TC="$OPTARG"
+		;;
+	y)
+		COMPILE_ARCH="$OPTARG"
+		MAKE_TARGET=Image
 		;;
 	?)
 		usage
@@ -323,7 +339,9 @@ for config in `echo $configs_for_test`
 do
 	COMPILE_CONFIG="$config"
 
-	identify_the_arch $COMPILE_CONFIG
+	if [ -z "$COMPILE_ARCH" ] ; then
+		identify_the_arch $COMPILE_CONFIG
+	fi
 
 	if [ -n "$COMPILE_ARCH" ]  && [ -n "$CROSS_TC" ] ; then
 		echo "~~~~~~~~~~~~~~~~~~~~~~~ compiling $COMPILE_CONFIG ~~~~~~~~~~~~~~~~~~~~~~~~"
