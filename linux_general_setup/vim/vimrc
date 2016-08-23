@@ -117,3 +117,6 @@ function! s:RunShellCommand(cmdline)
   silent execute '$read !'. expanded_cmdline
   1
 endfunction
+
+" Copy to OS clipboard
+set clipboard=unnamed
