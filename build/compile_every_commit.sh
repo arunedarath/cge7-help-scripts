@@ -356,7 +356,14 @@ do
 			yes "" | make ARCH=$COMPILE_ARCH oldconfig > /dev/null 2>&1
 
 			make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j$PARALLEL_MAKE > /dev/null
-			if [ $? -ne 0 ] ; then
+			rc=$?
+			if [ $rc -ne 0 ] ; then
+				echo "Compiling again to make sure that it is a failure; not a temporary license error"
+				make ARCH=$COMPILE_ARCH CROSS_COMPILE="$CROSS_TC" $MAKE_TARGET -j$PARALLEL_MAKE > /dev/null
+				rc=$?
+			fi
+
+			if [ $rc -ne 0 ] ; then
 				echo "compilation failed for $COMPILE_CONFIG $COMMIT_MSG"
 				echo "FAILED: $COMPILE_CONFIG $COMMIT_MSG" >> "$COMPILE_TEST_LOG"
 			else
