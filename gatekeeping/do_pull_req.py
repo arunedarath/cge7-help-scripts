@@ -6,7 +6,6 @@ import argparse
 import subprocess
 import getpass
 import requests
-import shlex
 
 parser = argparse.ArgumentParser(description='Perform merge request')
 parser.add_argument('-b', '--bugz', help='Bug number', required=True, type=int)
@@ -35,16 +34,16 @@ cmd_timeout = 180
 def execute_cmd(cmd, prstr):
     "Execute the bash commands encoded in cmd and handle timeouts"
     try:
-        p = subprocess.Popen(shlex.split(cmd))
+        p = subprocess.Popen(cmd, shell=True)
         p.wait(timeout=cmd_timeout)
         if (p.returncode == 0):
             print (prstr)
         else:
-            print ("Something is wrong; exiting ...")
+            print ("The command:%s pid:%d failed... exiting \n" % (cmd, p.pid))
             sys.exit(1)
     except subprocess.TimeoutExpired:
         p.kill()
-        print ("The command:%s timed out, but continuing \n" % (cmd))
+        print ("The command:%s pid:%d timed out, but continuing \n" % (cmd, p.pid))
         return
 
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
@@ -87,17 +86,24 @@ def check_err(err, got):
         sys.exit(1)
 
 with requests.session() as s:
-    r = s.post(bugz_login_url, data=acc_details)
-    handle_bugz_err(r.status_code, "Bugzilla login falied\n")
-    soup = bs(r.text, 'lxml')
-    check_err("Invalid Username Or Password", soup.title.string)
+    try:
+        r = s.post(bugz_login_url, data=acc_details)
+        handle_bugz_err(r.status_code, "Bugzilla login falied\n")
+        soup = bs(r.text, 'lxml')
+        check_err("Invalid Username Or Password", soup.title.string)
 
-    r = s.get(bugz_login_url)
-    soup = bs(r.text, 'lxml')
-    upd_d['delta_ts'] = soup.find('input', {'name': 'delta_ts'}).get('value')
-    upd_d['token'] = soup.find('input', {'name': 'token'}).get('value')
+        r = s.get(bugz_login_url)
+        soup = bs(r.text, 'lxml')
+        upd_d['delta_ts'] = soup.find('input', {'name': 'delta_ts'}).get('value')
+        upd_d['token'] = soup.find('input', {'name': 'token'}).get('value')
 
-    txt = open(merg_req_f)
-    upd_d['comment'] = txt.read()
-    r = s.post(bugz_post_url, data=upd_d)
-    print("Finished....... bye.")
+        txt = open(merg_req_f)
+        upd_d['comment'] = txt.read()
+        r = s.post(bugz_post_url, data=upd_d)
+        print("Finished....... bye.")
+    except requests.exceptions.Timeout:
+        print("Connection timed out")
+        sys.exit(1)
+    except requests.exceptions.RequestException as e:
+        print (e)
+        sys.exit(1)
