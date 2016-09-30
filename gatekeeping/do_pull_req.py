@@ -72,8 +72,7 @@ upd_d = {
 }
 
 
-def handle_bugz_err(status, prstr):
-    if (status != requests.codes.ok):
+def handle_bugz_err(prstr):
         print(prstr)
         print("Exiting..")
         sys.exit(1)
@@ -88,7 +87,6 @@ def check_err(err, got):
 with requests.session() as s:
     try:
         r = s.post(bugz_login_url, data=acc_details)
-        handle_bugz_err(r.status_code, "Bugzilla login falied\n")
         soup = bs(r.text, 'lxml')
         check_err("Invalid Username Or Password", soup.title.string)
 
@@ -102,8 +100,7 @@ with requests.session() as s:
         r = s.post(bugz_post_url, data=upd_d)
         print("Finished....... bye.")
     except requests.exceptions.Timeout:
-        print("Connection timed out")
-        sys.exit(1)
+        handle_bugz_err("Connection timed out")
     except requests.exceptions.RequestException as e:
-        print (e)
+        handle_bugz_err(e)
         sys.exit(1)
