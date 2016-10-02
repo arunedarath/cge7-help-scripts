@@ -47,15 +47,16 @@ def error_exit(prstr):
         sys.exit(1)
 
 
-def execute_cmd(cmd, prstr):
+def execute_cmd(cmd, s_str, f_str):
     "Execute the bash commands encoded in cmd and handle timeouts"
     try:
         p = subprocess.Popen(cmd, shell=True)
         p.wait(timeout=cmd_timeout)
         if (p.returncode == 0):
-            print (prstr)
+            print (s_str)
         else:
-            error_exit("The command:%s pid:%d failed" % (cmd, p.pid))
+            print(f_str)
+            error_exit('The command:%s pid:%d failed' % (cmd, p.pid))
     except subprocess.TimeoutExpired:
         p.kill()
         print ("The command:%s pid:%d timed out, but continuing \n" % (cmd, p.pid))
@@ -85,7 +86,7 @@ def form_repo_data(idx):
 
 def identify_repo():
     cmd = 'git config --get remote.origin.url > %s' % (merg_req_f)
-    execute_cmd(cmd, "")
+    execute_cmd(cmd, "", "Please make sure that you are inside a valid git repository")
     txt = open(merg_req_f)
     tmp = txt.readline()
     txt.close()
@@ -105,15 +106,19 @@ def identify_repo():
 
 identify_repo()
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
-execute_cmd(cmd, "Successfully created tag : %s\n" % (tag))
+success_str = 'Successfully created tag : %s\n' % (tag)
+fail_str = 'Please try again after manually deleting the tag'
+execute_cmd(cmd, success_str, fail_str)
 
 print ("Pushing the tag : %s to %s" % (tag, contrib_url))
 username = input("Please enter your bugzilla user name\n")
 cmd = 'git push "%s"@"%s" "+%s"' % (username, contrib, tag)
-execute_cmd(cmd, "Successfully pushed the tag to %s\n" % (contrib))
+success_str = 'Successfully pushed the tag to %s\n' % (contrib)
+execute_cmd(cmd, success_str, "")
 
 cmd = 'git request-pull %s %s %s | tee %s' % (start_c, contrib_url, tag, merg_req_f)
-execute_cmd(cmd, "Successfully generated pull request\n")
+success_str = 'Successfully generated pull request\n'
+execute_cmd(cmd, success_str, "")
 
 print ("Trying to update bugzilla fields for bug %s" % str(args['bugz']))
 bugz_pword = getpass.getpass('Please enter your bugzilla password:')
