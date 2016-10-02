@@ -22,13 +22,13 @@ repo_details = [
         'repo': 'CGE7',
         'origin': 'gitcge7.mvista.com:/mvista/git/cge7/kernel/mvl7kernel.git',
         'pushto': 'gitcge7.mvista.com:/mvista/git/cge7/contrib/kernel.git',
-        'tag_msg': 'Merge to mvl7-3.10/cge_dev',
-        'git_tag': 'mvl7-3.10/cge_dev-',
         'url': 'git://gitcge7.mvista.com/cge7/contrib/kernel.git',
         },
     {
         'repo': 'CGX2.0',
         'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX2.0/kernel/linux-mvista-2.0.git',
+        'pushto': 'gitcgx.mvista.com:/mvista/git/cgx/contrib/kernel.git',
+        'url': 'git://gitcgx.mvista.com/cgx/contrib/kernel.git',
         },
 ]
 
@@ -36,7 +36,7 @@ bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
 bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
 
 start_c = 'HEAD~'+p_count
-merg_req_f = bug_no+'-'+'V'+revision+'.file'
+tmp_f = bug_no+'-V'+revision+'.file'
 
 cmd_timeout = 180
 
@@ -53,9 +53,11 @@ def execute_cmd(cmd, s_str, f_str):
         p = subprocess.Popen(cmd, shell=True)
         p.wait(timeout=cmd_timeout)
         if (p.returncode == 0):
-            print (s_str)
+            if (s_str):
+                print (s_str)
         else:
-            print(f_str)
+            if (f_str):
+                print(f_str)
             error_exit('The command:%s pid:%d failed' % (cmd, p.pid))
     except subprocess.TimeoutExpired:
         p.kill()
@@ -75,22 +77,27 @@ contrib_url = ''
 tag = ''
 
 
-def form_repo_data(idx):
-    print("%s repo identified" % (repo_details[idx]['repo']))
+def form_repo_data(idx, remote_branch):
+    print("%s repo identified." % (repo_details[idx]['repo']))
+    print("Your changes target the remote branch:%s" % (remote_branch))
     global contrib, msg, contrib_url, tag
     contrib = repo_details[idx]['pushto']
-    msg = repo_details[idx]['tag_msg']
     contrib_url = repo_details[idx]['url']
-    tag = repo_details[idx]['git_tag']+bug_no+'-V'+revision
+    msg = 'Merge to %s' % (remote_branch)
+    tag = '%s-%s-V%s' % (remote_branch, bug_no, revision)
+
+
+def format_first_line(tfile):
+    txt = open(tfile)
+    tmp = txt.readline()
+    txt.close()
+    return tmp.splitlines()
 
 
 def identify_repo():
-    cmd = 'git config --get remote.origin.url > %s' % (merg_req_f)
+    cmd = 'git config --get remote.origin.url > %s' % (tmp_f)
     execute_cmd(cmd, "", "Please make sure that you are inside a valid git repository")
-    txt = open(merg_req_f)
-    tmp = txt.readline()
-    txt.close()
-    tmp = tmp.splitlines()
+    tmp = format_first_line(tmp_f)
     if (tmp):
         tmp = tmp[0].split('@')
         if (len(tmp) != 2):
@@ -100,7 +107,11 @@ def identify_repo():
         if (idx == -1):
             error_exit("Unable to find the repo type\n")
 
-        form_repo_data(idx)
+        # Now identify the remote tracking branch of the current branch
+        cmd = "git branch -vv | grep '^*' | grep -o '\[origin/.*\]' | sed 's/\(\[\|\]\)//g' | cut -d'/' -f2- > %s" % (tmp_f)
+        execute_cmd(cmd, "", "")
+        tmp = format_first_line(tmp_f)
+        form_repo_data(idx, tmp[0])
     else:
         error_exit("Not an MV type repo\n")
 
@@ -116,7 +127,7 @@ cmd = 'git push "%s"@"%s" "+%s"' % (username, contrib, tag)
 success_str = 'Successfully pushed the tag to %s\n' % (contrib)
 execute_cmd(cmd, success_str, "")
 
-cmd = 'git request-pull %s %s %s | tee %s' % (start_c, contrib_url, tag, merg_req_f)
+cmd = 'git request-pull %s %s %s | tee %s' % (start_c, contrib_url, tag, tmp_f)
 success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
@@ -150,7 +161,7 @@ with requests.session() as s:
         upd_d['delta_ts'] = soup.find('input', {'name': 'delta_ts'}).get('value')
         upd_d['token'] = soup.find('input', {'name': 'token'}).get('value')
 
-        txt = open(merg_req_f)
+        txt = open(tmp_f)
         upd_d['comment'] = txt.read()
         txt.close()
         r = s.post(bugz_post_url, data=upd_d)
