@@ -18,19 +18,19 @@ revision = str(args['revision'])
 p_count = str(args['num'])
 
 repo_details = [
-        {
-            'repo': 'CGE7',
-            'origin': 'gitcge7.mvista.com:/mvista/git/cge7/kernel/mvl7kernel.git',
-            'pushto': 'gitcge7.mvista.com:/mvista/git/cge7/contrib/kernel.git',
-            'tag_msg': 'Merge to mvl7-3.10/cge_dev',
-            'git_tag': 'mvl7-3.10/cge_dev-',
-            'url': 'git://gitcge7.mvista.com/cge7/contrib/kernel.git',
-            },
-        {
-            'repo': 'CGX2.0',
-            'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX2.0/kernel/linux-mvista-2.0.git',
-            },
-        ]
+    {
+        'repo': 'CGE7',
+        'origin': 'gitcge7.mvista.com:/mvista/git/cge7/kernel/mvl7kernel.git',
+        'pushto': 'gitcge7.mvista.com:/mvista/git/cge7/contrib/kernel.git',
+        'tag_msg': 'Merge to mvl7-3.10/cge_dev',
+        'git_tag': 'mvl7-3.10/cge_dev-',
+        'url': 'git://gitcge7.mvista.com/cge7/contrib/kernel.git',
+        },
+    {
+        'repo': 'CGX2.0',
+        'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX2.0/kernel/linux-mvista-2.0.git',
+        },
+]
 
 bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
 bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
@@ -68,6 +68,11 @@ def find(lst, key, value):
             return i
     return -1
 
+contrib = ''
+msg = ''
+contrib_url = ''
+tag = ''
+
 
 def form_repo_data(idx):
     print("%s repo identified" % (repo_details[idx]['repo']))
@@ -80,7 +85,7 @@ def form_repo_data(idx):
 
 def identify_repo():
     cmd = 'git config --get remote.origin.url > %s' % (merg_req_f)
-    rc = execute_cmd(cmd, "")
+    execute_cmd(cmd, "")
     txt = open(merg_req_f)
     tmp = txt.readline()
     txt.close()
