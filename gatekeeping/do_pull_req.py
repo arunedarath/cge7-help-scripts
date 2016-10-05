@@ -114,10 +114,13 @@ def identify_repo():
             error_exit("Unable to find the repo type\n")
 
         # Now identify the remote tracking branch of the current branch
-        cmd = "git branch -vv | grep '^*' | grep -o '\[origin/.*\]' | sed 's/\(\[\|\]\)//g' | cut -d'/' -f2- > %s" % (tmp_f)
+        cmd = "git rev-parse --abbrev-ref --symbolic-full-name @{u} | cut -d'/' -f2- > %s" % (tmp_f)
         execute_cmd(cmd, "", "")
         tmp = format_first_line(tmp_f)
-        form_repo_data(idx, tmp[0])
+        if (len(tmp) != 0):
+            form_repo_data(idx, tmp[0])
+        else:
+            error_exit("Unable to find the upstream branch for the current branch\n")
     else:
         error_exit("Not an MV type repo\n")
 
