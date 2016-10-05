@@ -32,7 +32,7 @@ repo_details = [
         },
     {
         'repo': 'CGX1.8',
-        'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX/kernels/linux-mvista-1.8.git'
+        'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX/kernels/linux-mvista-1.8.git',
         'pushto': 'gitcgx.mvista.com:/mvista/git/cgx/contrib/kernel.git',
         'url': 'git://gitcgx.mvista.com/cgx/contrib/kernel.git',
         },
