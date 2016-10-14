@@ -8,14 +8,17 @@ import getpass
 import requests
 
 parser = argparse.ArgumentParser(description='Perform merge request')
-parser.add_argument('-b', '--bugz', help='Bug number', required=True, type=int)
-parser.add_argument('-r', '--revision', help='Patch revision', required=True, type=int)
-parser.add_argument('-n', '--num', help='No of patches you are pushing', required=True, type=int)
+parser.add_argument('-b', help='Bug number', required=True, type=int)
+parser.add_argument('-r', help='Patch revision', required=True, type=int)
+parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
+parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
 args = vars(parser.parse_args())
 
-bug_no = str(args['bugz'])
-revision = str(args['revision'])
-p_count = str(args['num'])
+bug_no = str(args['b'])
+revision = str(args['r'])
+p_count = str(args['n'])
+start = str(args['s'])
+start_c = ''
 
 repo_details = [
     {
@@ -41,7 +44,6 @@ repo_details = [
 bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
 bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
 
-start_c = 'HEAD~'+p_count
 tmp_f = bug_no+'-V'+revision+'.file'
 
 cmd_timeout = 180
@@ -124,6 +126,19 @@ def identify_repo():
     else:
         error_exit("Not an MV type repo\n")
 
+
+def mark_start_commit():
+    global start_c
+    if (p_count == 'None' and start == 'None'):
+        error_exit("Please specify a start commit for making the merge request; use -s or -n")
+
+    if (p_count != 'None'):
+        start_c = 'HEAD~'+p_count
+    elif (start != 'None'):
+        start_c = start
+
+
+mark_start_commit()
 identify_repo()
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
 success_str = 'Successfully created tag : %s\n' % (tag)
@@ -136,11 +151,11 @@ cmd = 'git push "%s"@"%s" "+%s"' % (username, contrib, tag)
 success_str = 'Successfully pushed the tag to %s\n' % (contrib)
 execute_cmd(cmd, success_str, "")
 
-cmd = 'git request-pull %s %s %s | tee %s' % (start_c, contrib_url, tag, tmp_f)
+cmd = 'git request-pull %s %s %s | tee %s ; test ${PIPESTATUS[0]} -eq 0' % (start_c, contrib_url, tag, tmp_f)
 success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
-print ("Trying to update bugzilla fields for bug %s" % str(args['bugz']))
+print ("Trying to update bugzilla fields for bug %s" % bug_no)
 bugz_pword = getpass.getpass('Please enter your bugzilla password:')
 
 acc_details = {
