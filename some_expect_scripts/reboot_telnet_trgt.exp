@@ -1,0 +1,27 @@
+#!/usr/bin/expect
+
+set ip [lindex $argv 0]
+set port [lindex $argv 1]
+
+set timeout -1
+
+set PRMPT "*# "
+spawn -noecho telnet $ip $port
+sleep 1
+send "\r"
+expect $PRMPT
+
+set count 1;
+while {$count < 20 } {
+	puts "---------------------------------> reboot count : $count <------------------------------------ \n";
+	send "\r"
+	expect $PRMPT
+	send "./ll.sh\r"
+	sleep 5
+
+	expect "buildroot login: "
+	send "root\r"
+	puts "$$$$$$$$$$$$$$$$$$$$$$ REBOOT DONE $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n"
+
+	set count [expr $count+1];
+}
