@@ -7,18 +7,17 @@ import subprocess
 import getpass
 import requests
 
-parser = argparse.ArgumentParser(description='Perform merge request')
-parser.add_argument('-b', help='Bug number', required=True, type=int)
-parser.add_argument('-r', help='Patch revision', required=True, type=int)
-parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
-parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
-args = vars(parser.parse_args())
-
-bug_no = str(args['b'])
-revision = str(args['r'])
-p_count = str(args['n'])
-start = str(args['s'])
+bug_no = ''
+revision = ''
+p_count = ''
+start = ''
 start_c = ''
+
+contrib = ''
+msg = ''
+contrib_url = ''
+tag = ''
+tmp_f = ''
 
 repo_details = [
     {
@@ -41,21 +40,15 @@ repo_details = [
         },
 ]
 
-bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
-bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
-
-tmp_f = bug_no+'-V'+revision+'.file'
-
-cmd_timeout = 180
-
 
 def error_exit(prstr):
-        print(prstr)
-        print("Exiting..")
-        sys.exit(1)
+    print(prstr)
+    print("Exiting..")
+    sys.exit(1)
 
 
 def execute_cmd(cmd, s_str, f_str):
+    cmd_timeout = 180
     "Execute the bash commands encoded in cmd and handle timeouts"
     try:
         p = subprocess.Popen(cmd, shell=True)
@@ -78,11 +71,6 @@ def find(lst, key, value):
         if dic[key] == value:
             return i
     return -1
-
-contrib = ''
-msg = ''
-contrib_url = ''
-tag = ''
 
 
 def form_repo_data(idx, remote_branch):
@@ -138,8 +126,71 @@ def mark_start_commit():
         start_c = start
 
 
+def parse_args():
+    global bug_no, revision, p_count, start, tmp_f
+    parser = argparse.ArgumentParser(description='Perform merge request')
+    parser.add_argument('-b', help='Bug number', required=True, type=int)
+    parser.add_argument('-r', help='Patch revision', required=True, type=int)
+    parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
+    parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
+    args = vars(parser.parse_args())
+
+    bug_no = str(args['b'])
+    revision = str(args['r'])
+    p_count = str(args['n'])
+    start = str(args['s'])
+    tmp_f = bug_no+'-V'+revision+'.file'
+
+
+def check_err(err, got):
+    if (err == got):
+        error_exit(err)
+
+
+def update_bugz_fields(uname, pword):
+    bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
+    bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
+
+    acc_details = {
+        'Bugzilla_login': uname,
+        'Bugzilla_password': pword,
+    }
+
+    upd_d = {
+        'id': bug_no,
+        'status_whiteboard': 'GitMergeRequest',
+        'newcc': 'cge7-kernel-gatekeepers@mvista.com, akuster',
+    }
+
+
+    with requests.session() as s:
+        try:
+            r = s.post(bugz_login_url, data=acc_details)
+            soup = bs(r.text, 'lxml')
+            check_err("Invalid Username Or Password", soup.title.string)
+
+            r = s.get(bugz_login_url)
+            soup = bs(r.text, 'lxml')
+            upd_d['delta_ts'] = soup.find('input', {'name': 'delta_ts'}).get('value')
+            upd_d['token'] = soup.find('input', {'name': 'token'}).get('value')
+
+            txt = open(tmp_f)
+            upd_d['comment'] = txt.read()
+            txt.close()
+            r = s.post(bugz_post_url, data=upd_d)
+            print("Finished....... bye.")
+        except requests.exceptions.Timeout:
+            error_exit("Connection timed out")
+        except requests.exceptions.RequestException as e:
+            error_exit(e)
+
+
+
+
+parse_args()
 mark_start_commit()
 identify_repo()
+
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
 success_str = 'Successfully created tag : %s\n' % (tag)
 fail_str = 'Please try again after manually deleting the tag'
@@ -158,39 +209,4 @@ execute_cmd(cmd, success_str, "")
 print ("Trying to update bugzilla fields for bug %s" % bug_no)
 bugz_pword = getpass.getpass('Please enter your bugzilla password:')
 
-acc_details = {
-    'Bugzilla_login': username,
-    'Bugzilla_password': bugz_pword,
-}
-
-upd_d = {
-    'id': bug_no,
-    'status_whiteboard': 'GitMergeRequest',
-    'newcc': 'cge7-kernel-gatekeepers@mvista.com, akuster',
-}
-
-
-def check_err(err, got):
-    if (err == got):
-        error_exit(err)
-
-with requests.session() as s:
-    try:
-        r = s.post(bugz_login_url, data=acc_details)
-        soup = bs(r.text, 'lxml')
-        check_err("Invalid Username Or Password", soup.title.string)
-
-        r = s.get(bugz_login_url)
-        soup = bs(r.text, 'lxml')
-        upd_d['delta_ts'] = soup.find('input', {'name': 'delta_ts'}).get('value')
-        upd_d['token'] = soup.find('input', {'name': 'token'}).get('value')
-
-        txt = open(tmp_f)
-        upd_d['comment'] = txt.read()
-        txt.close()
-        r = s.post(bugz_post_url, data=upd_d)
-        print("Finished....... bye.")
-    except requests.exceptions.Timeout:
-        error_exit("Connection timed out")
-    except requests.exceptions.RequestException as e:
-        error_exit(e)
+update_bugz_fields(username, bugz_pword)
