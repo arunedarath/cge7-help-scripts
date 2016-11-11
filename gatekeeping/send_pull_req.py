@@ -19,6 +19,8 @@ msg = ''
 contrib_url = ''
 tag = ''
 tmp_f = ''
+username = ''
+mvista_id = ''
 
 repo_details = [
     {
@@ -77,11 +79,27 @@ def find(lst, key, value):
 def form_repo_data(idx, remote_branch):
     print("%s repo identified." % (repo_details[idx]['repo']))
     print("Your changes target the remote branch:%s" % (remote_branch))
-    global contrib, msg, contrib_url, tag
+    global contrib, msg, contrib_url, tag, username, mvista_id
     contrib = repo_details[idx]['pushto']
     contrib_url = repo_details[idx]['url']
     msg = 'Merge to %s' % (remote_branch)
     tag = '%s-%s-V%s' % (remote_branch, bug_no, revision)
+
+    cmd = 'git config user.name > %s' % (tmp_f)
+    execute_cmd(cmd, "", "Please configure username for the git repo")
+    username = format_first_line(tmp_f)[0]
+
+    cmd = 'git config user.email > %s' % (tmp_f)
+    execute_cmd(cmd, "", "Please configure email-id for the git repo")
+    mvista_id = format_first_line(tmp_f)
+
+    cmd = 'git config user.email | grep \'@mvista.com\' > %s' %(tmp_f)
+    execute_cmd(cmd, "", "User's email-ID is not from the domain mvista.com")
+
+    if (mvista_id):
+        mvista_id = mvista_id[0].split('@')[0]
+    else:
+        error_exit("Unable to fetch the required git repo details")
 
 
 def format_first_line(tfile):
@@ -192,16 +210,21 @@ parse_args()
 mark_start_commit()
 identify_repo()
 
+print("Generating pull request with the details")
+print("----------------------------------------")
+print("Username: %s" % (username))
+print("Bugzilla-ID: %s" % (mvista_id))
+print("----------------------------------------")
+
+bugz_pword = getpass.getpass('Please enter your bugzilla password:')
+
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
 success_str = 'Successfully created tag : %s\n' % (tag)
 fail_str = 'Please try again after manually deleting the tag'
 execute_cmd(cmd, success_str, fail_str)
 
 print ("Pushing the tag : %s to %s" % (tag, contrib_url))
-username = input("Please enter your bugzilla user name\n")
-bugz_pword = getpass.getpass('Please enter your bugzilla password:')
-
-cmd = 'git push "%s"@"%s" "+%s"' % (username, contrib, tag)
+cmd = 'git push "%s"@"%s" "+%s"' % (mvista_id, contrib, tag)
 child = pexpect.spawn(cmd)
 index = child.expect(['password:', 'fatal: Could not read from remote repository.', pexpect.EOF])
 if (index == 0):
@@ -222,4 +245,4 @@ success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
 print ("Trying to update bugzilla fields for bug %s" % bug_no)
-update_bugz_fields(username, bugz_pword)
+update_bugz_fields(mvista_id, bugz_pword)
