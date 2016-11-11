@@ -21,6 +21,7 @@ tag = ''
 tmp_f = ''
 username = ''
 mvista_id = ''
+debug = ''
 
 repo_details = [
     {
@@ -44,6 +45,11 @@ repo_details = [
 ]
 
 
+def dbg_print(str):
+    if (debug == 1):
+        print(str)
+
+
 def error_exit(prstr):
     print(prstr)
     print("Exiting..")
@@ -58,14 +64,14 @@ def execute_cmd(cmd, s_str, f_str):
         p.wait(timeout=cmd_timeout)
         if (p.returncode == 0):
             if (s_str):
-                print (s_str)
+                dbg_print(s_str)
         else:
             if (f_str):
                 print(f_str)
             error_exit('The command:%s pid:%d failed' % (cmd, p.pid))
     except subprocess.TimeoutExpired:
         p.kill()
-        print ("The command:%s pid:%d timed out, but continuing \n" % (cmd, p.pid))
+        print("The command:%s pid:%d timed out, but continuing \n" % (cmd, p.pid))
         return
 
 
@@ -77,8 +83,8 @@ def find(lst, key, value):
 
 
 def form_repo_data(idx, remote_branch):
-    print("%s repo identified." % (repo_details[idx]['repo']))
-    print("Your changes target the remote branch:%s" % (remote_branch))
+    dbg_print("%s repo identified." % (repo_details[idx]['repo']))
+    dbg_print("Your changes target the remote branch:%s" % (remote_branch))
     global contrib, msg, contrib_url, tag, username, mvista_id
     contrib = repo_details[idx]['pushto']
     contrib_url = repo_details[idx]['url']
@@ -93,7 +99,7 @@ def form_repo_data(idx, remote_branch):
     execute_cmd(cmd, "", "Please configure email-id for the git repo")
     mvista_id = format_first_line(tmp_f)
 
-    cmd = 'git config user.email | grep \'@mvista.com\' > %s' %(tmp_f)
+    cmd = 'git config user.email | grep \'@mvista.com\' > %s' % (tmp_f)
     execute_cmd(cmd, "", "User's email-ID is not from the domain mvista.com")
 
     if (mvista_id):
@@ -146,13 +152,17 @@ def mark_start_commit():
 
 
 def parse_args():
-    global bug_no, revision, p_count, start, tmp_f
+    global bug_no, revision, p_count, start, tmp_f, debug
     parser = argparse.ArgumentParser(description='Perform merge request')
     parser.add_argument('-b', help='Bug number', required=True, type=int)
     parser.add_argument('-r', help='Patch revision', required=True, type=int)
     parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
     parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
+    parser.add_argument('-v', help='Print verbose messages', action="store_true")
     args = vars(parser.parse_args())
+
+    if (args['v']):
+        debug = 1
 
     bug_no = str(args['b'])
     revision = str(args['r'])
@@ -181,7 +191,6 @@ def update_bugz_fields(uname, pword):
         'newcc': 'cge7-kernel-gatekeepers@mvista.com, akuster',
     }
 
-
     with requests.session() as s:
         try:
             r = s.post(bugz_login_url, data=acc_details)
@@ -197,13 +206,10 @@ def update_bugz_fields(uname, pword):
             upd_d['comment'] = txt.read()
             txt.close()
             r = s.post(bugz_post_url, data=upd_d)
-            print("Finished....... bye.")
         except requests.exceptions.Timeout:
             error_exit("Connection timed out")
         except requests.exceptions.RequestException as e:
             error_exit(e)
-
-
 
 
 parse_args()
@@ -223,7 +229,7 @@ success_str = 'Successfully created tag : %s\n' % (tag)
 fail_str = 'Please try again after manually deleting the tag'
 execute_cmd(cmd, success_str, fail_str)
 
-print ("Pushing the tag : %s to %s" % (tag, contrib_url))
+dbg_print("Pushing the tag : %s to %s" % (tag, contrib_url))
 cmd = 'git push "%s"@"%s" "+%s"' % (mvista_id, contrib, tag)
 child = pexpect.spawn(cmd)
 index = child.expect(['password:', 'fatal: Could not read from remote repository.', pexpect.EOF])
@@ -238,11 +244,17 @@ if (index != 2):
     child.close()
     error_exit("Wrong password, Please try again..")
 else:
-    print('Successfully pushed the tag to %s\n' % (contrib))
+    dbg_print('Successfully pushed the tag to %s\n' % (contrib))
 
-cmd = 'git request-pull %s %s %s | tee %s ; test ${PIPESTATUS[0]} -eq 0' % (start_c, contrib_url, tag, tmp_f)
+if (debug == 1):
+    cmd = 'git request-pull %s %s %s | tee %s ; test ${PIPESTATUS[0]} -eq 0' % (start_c, contrib_url, tag, tmp_f)
+else:
+    cmd = 'git request-pull %s %s %s > %s' % (start_c, contrib_url, tag, tmp_f)
+    print("Pull request being generated")
+
 success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
-print ("Trying to update bugzilla fields for bug %s" % bug_no)
+dbg_print("Trying to update bugzilla fields for bug %s" % bug_no)
 update_bugz_fields(mvista_id, bugz_pword)
+print("Done.")
