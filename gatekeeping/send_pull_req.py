@@ -6,6 +6,7 @@ import argparse
 import subprocess
 import getpass
 import requests
+import pexpect
 
 bug_no = ''
 revision = ''
@@ -198,15 +199,27 @@ execute_cmd(cmd, success_str, fail_str)
 
 print ("Pushing the tag : %s to %s" % (tag, contrib_url))
 username = input("Please enter your bugzilla user name\n")
+bugz_pword = getpass.getpass('Please enter your bugzilla password:')
+
 cmd = 'git push "%s"@"%s" "+%s"' % (username, contrib, tag)
-success_str = 'Successfully pushed the tag to %s\n' % (contrib)
-execute_cmd(cmd, success_str, "")
+child = pexpect.spawn(cmd)
+index = child.expect(['password:', 'fatal: Could not read from remote repository.', pexpect.EOF])
+if (index == 0):
+    child.sendline(bugz_pword)
+else:
+    child.close()
+    error_exit("Unable to read from the remote git repo")
+
+index = child.expect(['Permission denied, please try again.', 'fatal: Could not read from remote repository.', pexpect.EOF])
+if (index != 2):
+    child.close()
+    error_exit("Wrong password, Please try again..")
+else:
+    print('Successfully pushed the tag to %s\n' % (contrib))
 
 cmd = 'git request-pull %s %s %s | tee %s ; test ${PIPESTATUS[0]} -eq 0' % (start_c, contrib_url, tag, tmp_f)
 success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
 print ("Trying to update bugzilla fields for bug %s" % bug_no)
-bugz_pword = getpass.getpass('Please enter your bugzilla password:')
-
 update_bugz_fields(username, bugz_pword)
