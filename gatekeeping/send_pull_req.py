@@ -22,6 +22,7 @@ tmp_f = ''
 username = ''
 mvista_id = ''
 debug = ''
+tag_is_created = ''
 
 repo_details = [
     {
@@ -53,6 +54,9 @@ def dbg_print(str):
 def error_exit(prstr):
     print(prstr)
     print("Exiting..")
+    if (tag_is_created == 1):
+        cmd = 'git tag -d %s > /dev/null' % (tag)
+        execute_cmd(cmd, "", "")
     sys.exit(1)
 
 
@@ -68,7 +72,7 @@ def execute_cmd(cmd, s_str, f_str):
         else:
             if (f_str):
                 print(f_str)
-            error_exit('The command:%s pid:%d failed' % (cmd, p.pid))
+            error_exit('Unable to run command: %s' % (cmd))
     except subprocess.TimeoutExpired:
         p.kill()
         print("The command:%s pid:%d timed out, but continuing \n" % (cmd, p.pid))
@@ -216,45 +220,50 @@ parse_args()
 mark_start_commit()
 identify_repo()
 
-print("Generating pull request with the details")
-print("----------------------------------------")
-print("Username: %s" % (username))
-print("Bugzilla-ID: %s" % (mvista_id))
-print("----------------------------------------")
+dbg_print("Generating pull request with the details")
+dbg_print("----------------------------------------")
+dbg_print("Username: %s" % (username))
+dbg_print("Bugzilla-ID: %s" % (mvista_id))
+dbg_print("----------------------------------------")
 
-bugz_pword = getpass.getpass('Please enter your bugzilla password:')
+bugz_pword = getpass.getpass('Please enter bugzilla password for %s:' % (mvista_id))
 
 cmd = 'git tag -m "%s" "%s"' % (msg, tag)
 success_str = 'Successfully created tag : %s\n' % (tag)
 fail_str = 'Please try again after manually deleting the tag'
 execute_cmd(cmd, success_str, fail_str)
+tag_is_created = 1
 
 dbg_print("Pushing the tag : %s to %s" % (tag, contrib_url))
 cmd = 'git push "%s"@"%s" "+%s"' % (mvista_id, contrib, tag)
+exp_str1 = 'password'
+exp_str2 = 'fatal: Could not read from remote repository.'
+exp_str3 = 'Permission denied, please try again.'
 child = pexpect.spawn(cmd)
-index = child.expect(['password:', 'fatal: Could not read from remote repository.', pexpect.EOF])
+index = child.expect([exp_str1, exp_str2, pexpect.EOF], timeout=180)
 if (index == 0):
     child.sendline(bugz_pword)
 else:
     child.close()
     error_exit("Unable to read from the remote git repo")
 
-index = child.expect(['Permission denied, please try again.', 'fatal: Could not read from remote repository.', pexpect.EOF])
-if (index != 2):
+index = child.expect([pexpect.TIMEOUT, exp_str3, exp_str2, pexpect.EOF], timeout=180)
+if (index == 3):
+    dbg_print('Successfully pushed the tag to %s\n' % (contrib))
+elif (index == 0):
+    print("Timeout during pushing the tag to contrib, but continuing")
+else:
     child.close()
     error_exit("Wrong password, Please try again..")
-else:
-    dbg_print('Successfully pushed the tag to %s\n' % (contrib))
 
 if (debug == 1):
     cmd = 'git request-pull %s %s %s | tee %s ; test ${PIPESTATUS[0]} -eq 0' % (start_c, contrib_url, tag, tmp_f)
 else:
     cmd = 'git request-pull %s %s %s > %s' % (start_c, contrib_url, tag, tmp_f)
-    print("Pull request being generated")
 
 success_str = 'Successfully generated pull request\n'
 execute_cmd(cmd, success_str, "")
 
 dbg_print("Trying to update bugzilla fields for bug %s" % bug_no)
 update_bugz_fields(mvista_id, bugz_pword)
-print("Done.")
+print("After pushing the changes to contrib merge request is posted on bugzilla. Done.")
