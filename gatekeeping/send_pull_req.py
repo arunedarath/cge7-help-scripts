@@ -266,4 +266,4 @@ execute_cmd(cmd, success_str, "")
 
 dbg_print("Trying to update bugzilla fields for bug %s" % bug_no)
 update_bugz_fields(mvista_id, bugz_pword)
-print("After pushing the changes to contrib merge request is posted on bugzilla. Done.")
+print("Successfully posted the merge request on bugzilla, after pushing changes to contrib. Done.")
