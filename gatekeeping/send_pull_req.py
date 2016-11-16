@@ -107,7 +107,7 @@ def identify_user():
 
 def identify_repo():
     identify_user()
-    url = run_cmd('git config --get remote.origin.url', "Please make sure that you are inside a valid git repository").splitlines()[0]
+    url = run_cmd('git config --get remote.origin.url', "Please run from a valid git repository").splitlines()[0]
     match = re.compile(mvista_id+'@.*.')
     if not (re.match(match, url)):
             error_exit("Not an MV type repo\n")
@@ -203,7 +203,7 @@ dbg_print("----------------------------------------")
 
 bugz_pword = getpass.getpass('Please enter bugzilla password for %s:' % (mvista_id))
 
-run_cmd('git tag -m "%s" "%s"' % (msg, tag), 'Please try again after manually deleting the tag', 'tag: %s created\n' % (tag))
+run_cmd('git tag -m "%s" "%s"' % (msg, tag), 'Please run after manually deleting the tag', 'tag: %s created\n' % (tag))
 tag_is_created = 1
 
 dbg_print("Pushing the tag: %s to %s" % (tag, contrib_url))
@@ -221,7 +221,7 @@ else:
 
 index = child.expect([pexpect.TIMEOUT, exp_str3, exp_str2, pexpect.EOF], timeout=180)
 if (index == 3):
-    dbg_print('Successfully pushed the tag to %s\n' % (contrib))
+    dbg_print('tag pushed to %s\n' % (contrib))
 elif (index == 0):
     print("Timeout during pushing the tag to contrib, but continuing")
 else:
