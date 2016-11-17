@@ -14,6 +14,7 @@ revision = ''
 p_count = ''
 start = ''
 start_c = ''
+upstream_br = ''
 
 contrib = ''
 msg = ''
@@ -106,6 +107,7 @@ def identify_user():
 
 
 def identify_repo():
+    global upstream_br
     identify_user()
     url = run_cmd('git config --get remote.origin.url', "Please run from a valid git repository").splitlines()[0]
     match = re.compile(mvista_id+'@.*.')
@@ -117,15 +119,22 @@ def identify_repo():
         error_exit("Unable to find the repo type\n")
 
     # Now identify the remote tracking branch of the current branch
-    remote_br = run_cmd('git rev-parse --abbrev-ref --symbolic-full-name @{u}', "Unable to find the remote branch").splitlines()[0]
-    remote_br = remote_br.split('/', 1)[1]
-    form_repo_data(idx, remote_br)
+    upstream_br = run_cmd('git rev-parse --abbrev-ref --symbolic-full-name @{u}', "Unable to find the remote branch").splitlines()[0]
+    form_repo_data(idx, upstream_br.split('/', 1)[1])
+
+
+def auto_count_commits_to_push():
+    global p_count
+    p_count = run_cmd('git rev-list --count %s..' % upstream_br).splitlines()[0]
+    if (p_count == '0'):
+        error_exit("Nothing to push. Current branch is up to date with %s" % upstream_br)
+    dbg_print('Found %s commits to push to contrib' % p_count)
 
 
 def mark_start_commit():
     global start_c
     if (p_count == 'None' and start == 'None'):
-        error_exit("Please specify a start commit for making the merge request; use -s or -n")
+        auto_count_commits_to_push()
 
     if (p_count != 'None'):
         start_c = 'HEAD~'+p_count
@@ -192,8 +201,8 @@ def update_bugz_fields(uname, pword, cmnt):
 
 
 parse_args()
-mark_start_commit()
 identify_repo()
+mark_start_commit()
 
 dbg_print("Generating pull request with the details")
 dbg_print("----------------------------------------")
