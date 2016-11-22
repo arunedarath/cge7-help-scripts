@@ -113,8 +113,12 @@ def auto_find_rev_from_contrib(tag_url, remote_branch):
     else:
         return revision
 
-    latest_rev = max(tag_list)
-    new_rev = latest_rev + 1
+    if tag_list:
+        latest_rev = max(tag_list)
+        new_rev = latest_rev + 1
+    else:
+        new_rev = 1
+
     dbg_print("Auto found revision = %d from %s" % (new_rev, tag_url))
     return new_rev
 
