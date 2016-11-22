@@ -31,18 +31,21 @@ repo_details = [
         'origin': 'gitcge7.mvista.com:/mvista/git/cge7/kernel/mvl7kernel.git',
         'pushto': 'gitcge7.mvista.com:/mvista/git/cge7/contrib/kernel.git',
         'url': 'git://gitcge7.mvista.com/cge7/contrib/kernel.git',
+        'web_url_tag': 'http://gitcge7.mvista.com/cgit/cge7/contrib/kernel.git/refs/tags',
         },
     {
         'repo': 'CGX2.0',
         'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX2.0/kernel/linux-mvista-2.0.git',
         'pushto': 'gitcgx.mvista.com:/mvista/git/cgx/contrib/kernel.git',
         'url': 'git://gitcgx.mvista.com/cgx/contrib/kernel.git',
+        'web_url_tag': 'http://gitcgx.mvista.com/cgit/contrib/kernel.git/refs/tags',
         },
     {
         'repo': 'CGX1.8',
         'origin': 'gitcgx.mvista.com:/mvista/git/cgx/CGX/kernels/linux-mvista-1.8.git',
         'pushto': 'gitcgx.mvista.com:/mvista/git/cgx/contrib/kernel.git',
         'url': 'git://gitcgx.mvista.com/cgx/contrib/kernel.git',
+        'web_url_tag': 'http://gitcgx.mvista.com/cgit/contrib/kernel.git/refs/tags',
         },
 ]
 
@@ -86,14 +89,45 @@ def find(lst, key, value):
     return -1
 
 
+def auto_find_rev_from_contrib(tag_url, remote_branch):
+    tag_fmt_str = '%s-%s-V' % (remote_branch, bug_no)
+    if (revision == 'None'):
+        with requests.session() as s:
+            try:
+                r = s.get(tag_url, timeout=30)
+                soup = bs(r.text, 'lxml')
+                tag_list = []
+
+                for line in soup.find_all('a'):
+                    tag_str = line.get_text()
+                    pattern = re.compile(tag_fmt_str + '[1-9][0-9]*$')
+                    if (re.search(pattern, tag_str)):
+                        tag_list.append(tag_str.replace(tag_fmt_str, ""))
+
+                tag_list = list(map(int, tag_list))
+
+            except requests.exceptions.Timeout:
+                error_exit("Connection timed out")
+            except requests.exceptions.RequestException as e:
+                error_exit(e)
+    else:
+        return revision
+
+    latest_rev = max(tag_list)
+    new_rev = latest_rev + 1
+    dbg_print("Auto found revision = %d from %s" % (new_rev, tag_url))
+    return new_rev
+
+
 def form_repo_data(idx, remote_branch):
     global contrib, msg, contrib_url, tag
     dbg_print("%s repo identified." % (repo_details[idx]['repo']))
     dbg_print("Your changes target the remote branch:%s" % (remote_branch))
     contrib = repo_details[idx]['pushto']
     contrib_url = repo_details[idx]['url']
+    rev = auto_find_rev_from_contrib(repo_details[idx]['web_url_tag'], remote_branch)
     msg = 'Merge to %s' % (remote_branch)
-    tag = '%s-%s-V%s' % (remote_branch, bug_no, revision)
+    tag = '%s-%s-V%s' % (remote_branch, bug_no, rev)
 
 
 def identify_user():
@@ -146,7 +180,7 @@ def parse_args():
     global bug_no, revision, p_count, start, debug
     parser = argparse.ArgumentParser(description='Perform merge request')
     parser.add_argument('-b', help='Bug number', required=True, type=int)
-    parser.add_argument('-r', help='Patch revision', required=True, type=int)
+    parser.add_argument('-r', help='Patch revision', required=False, type=int)
     parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
     parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
     parser.add_argument('-v', help='Print verbose messages', action="store_true")
