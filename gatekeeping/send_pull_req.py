@@ -51,15 +51,15 @@ repo_details = [
 
 
 def dbg_print(str):
-    if (debug == 1):
-        if (str):
+    if debug == 1:
+        if str:
             print(str)
 
 
 def error_exit(prstr):
     print(prstr)
     print("Exiting..")
-    if (tag_is_created == 1):
+    if tag_is_created == 1:
         run_cmd('git tag -d %s > /dev/null' % (tag))
     sys.exit(1)
 
@@ -69,9 +69,9 @@ def run_cmd(cmd, *argv):
     sstr = ""
     fstr = ""
 
-    if (leng):
+    if leng:
         fstr = argv[0]
-        if (leng > 1):
+        if leng > 1:
             sstr = argv[1]
 
     try:
@@ -91,7 +91,7 @@ def find(lst, key, value):
 
 def auto_find_rev_from_contrib(tag_url, remote_branch):
     tag_fmt_str = '%s-%s-V' % (remote_branch, bug_no)
-    if (revision == 'None'):
+    if revision == 'None':
         with requests.session() as s:
             try:
                 r = s.get(tag_url, timeout=30)
@@ -101,7 +101,7 @@ def auto_find_rev_from_contrib(tag_url, remote_branch):
                 for line in soup.find_all('a'):
                     tag_str = line.get_text()
                     pattern = re.compile(tag_fmt_str + '[1-9][0-9]*$')
-                    if (re.search(pattern, tag_str)):
+                    if re.search(pattern, tag_str):
                         tag_list.append(tag_str.replace(tag_fmt_str, ""))
 
                 tag_list = list(map(int, tag_list))
@@ -153,7 +153,7 @@ def identify_repo():
             error_exit("Not an MV type repo\n")
 
     idx = find(repo_details, 'origin', url.split('@')[1])
-    if (idx == -1):
+    if idx == -1:
         error_exit("Unable to find the repo type\n")
 
     # Now identify the remote tracking branch of the current branch
@@ -164,19 +164,19 @@ def identify_repo():
 def auto_count_commits_to_push():
     global p_count
     p_count = run_cmd('git rev-list --count %s..' % upstream_br).splitlines()[0]
-    if (p_count == '0'):
+    if p_count == '0':
         error_exit("Nothing to push. Current branch is up to date with %s" % upstream_br)
     dbg_print('Found %s commits to push to contrib' % p_count)
 
 
 def mark_start_commit():
     global start_c
-    if (p_count == 'None' and start == 'None'):
+    if p_count == 'None' and start == 'None':
         auto_count_commits_to_push()
 
-    if (p_count != 'None'):
+    if p_count != 'None':
         start_c = 'HEAD~'+p_count
-    elif (start != 'None'):
+    elif start != 'None':
         start_c = start
 
 
@@ -190,7 +190,7 @@ def parse_args():
     parser.add_argument('-v', help='Print verbose messages', action="store_true")
     args = vars(parser.parse_args())
 
-    if (args['v']):
+    if args['v']:
         debug = 1
 
     bug_no = str(args['b'])
@@ -200,7 +200,7 @@ def parse_args():
 
 
 def check_err(err, got):
-    if (err == got):
+    if err == got:
         error_exit(err)
 
 
@@ -260,16 +260,16 @@ exp_str2 = 'fatal: Could not read from remote repository.'
 exp_str3 = 'Permission denied, please try again.'
 child = pexpect.spawn(cmd)
 index = child.expect([exp_str1, exp_str2, pexpect.EOF], timeout=180)
-if (index == 0):
+if index == 0:
     child.sendline(bugz_pword)
 else:
     child.close()
     error_exit("Unable to read from the remote git repo")
 
 index = child.expect([pexpect.TIMEOUT, exp_str3, exp_str2, pexpect.EOF], timeout=180)
-if (index == 3):
+if index == 3:
     dbg_print('tag pushed to %s\n' % (contrib))
-elif (index == 0):
+elif index == 0:
     print("Timeout during pushing the tag to contrib, but continuing")
 else:
     child.close()
