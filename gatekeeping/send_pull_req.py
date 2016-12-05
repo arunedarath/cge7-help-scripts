@@ -182,7 +182,7 @@ def mark_start_commit():
 
 def parse_args():
     global bug_no, revision, p_count, start, debug
-    parser = argparse.ArgumentParser(description='Perform merge request')
+    parser = argparse.ArgumentParser(description="Perform merge request on CGE7 or CGX repo", usage="send_pull_req.py -b <bug number>")
     parser.add_argument('-b', help='Bug number', required=True, type=int)
     parser.add_argument('-r', help='Patch revision', required=False, type=int)
     parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
