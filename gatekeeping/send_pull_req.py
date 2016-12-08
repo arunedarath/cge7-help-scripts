@@ -8,6 +8,7 @@ import getpass
 import requests
 import pexpect
 import re
+import os
 
 bug_no = ''
 revision = ''
@@ -15,6 +16,7 @@ p_count = ''
 start = ''
 start_c = ''
 upstream_br = ''
+reviewer_ids = ''
 
 contrib = ''
 msg = ''
@@ -181,12 +183,13 @@ def mark_start_commit():
 
 
 def parse_args():
-    global bug_no, revision, p_count, start, debug
+    global bug_no, revision, p_count, start, debug, reviewer_ids
     parser = argparse.ArgumentParser(description="Perform merge request on CGE7 or CGX repo", usage="send_pull_req.py -b <bug number>")
     parser.add_argument('-b', help='Bug number', required=True, type=int)
     parser.add_argument('-r', help='Patch revision', required=False, type=int)
     parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
     parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
+    parser.add_argument('--rr', help='Send the merge request for review', metavar='<Reviewer\'s mvista ID>', required=False, type=str)
     parser.add_argument('-v', help='Print verbose messages', action="store_true")
     args = vars(parser.parse_args())
 
@@ -197,6 +200,7 @@ def parse_args():
     revision = str(args['r'])
     p_count = str(args['n'])
     start = str(args['s'])
+    reviewer_ids = str(args['rr'])
 
 
 def check_err(err, got):
@@ -204,7 +208,7 @@ def check_err(err, got):
         error_exit(err)
 
 
-def update_bugz_fields(uname, pword, cmnt):
+def update_bugz_merge_req_fields(uname, pword, cmnt):
     bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
     bugz_post_url = 'http://bugz.mvista.com/process_bug.cgi'
 
@@ -232,6 +236,63 @@ def update_bugz_fields(uname, pword, cmnt):
             upd_d['comment'] = cmnt
 
             r = s.post(bugz_post_url, data=upd_d)
+        except requests.exceptions.Timeout:
+            error_exit("Connection timed out")
+        except requests.exceptions.RequestException as e:
+            error_exit(e)
+
+
+def bugz_add_review_req_attachment(uname, pword, cmnt):
+    tmp_f = "%s-bugz-attachement" % (bug_no)
+    fp = open(tmp_f, "w+")
+    fp.write(cmnt)
+    fp.close()
+
+    bugz_login_url = 'http://bugz.mvista.com/show_bug.cgi?id='+bug_no
+    bugz_post_url = 'http://bugz.mvista.com/attachment.cgi?bugid='+bug_no+'&action=enter'
+
+    acc_details = {
+        'Bugzilla_login': uname,
+        'Bugzilla_password': pword,
+    }
+
+    review_req = "Hi, \nPlease review this merge request.\n-- %s" % (username)
+
+    bugz_attach = {
+        'bugid': (None, bug_no),
+        'action': (None, 'insert'),
+        'token': (None, ''),
+        'data': (tmp_f, open(tmp_f, 'rb')),
+        'description': (None, 'Review-content'),
+        'contenttypemethod': (None, 'list'),
+        'contenttypeselection': (None, 'text/plain'),
+        'contenttypeentry': (None, ''),
+        'flag_type-6': (None, 'X'),
+        'flag_type-1': (None, '?'),
+        'requestee_type-1': (None, reviewer_ids),
+        'comment': (None, review_req)
+    }
+
+    with requests.session() as s:
+        try:
+            r = s.post(bugz_login_url, data=acc_details)
+            soup = bs(r.text, 'lxml')
+            check_err("Invalid Username Or Password", soup.title.string)
+
+            r = s.get(bugz_post_url)
+            soup = bs(r.text, 'lxml')
+            bugz_attach['token'] = (None, soup.find('input', {'name': 'token'}).get('value'))
+
+            r = s.post(bugz_post_url, files=bugz_attach)
+            soup = bs(r.text, 'lxml')
+            result = soup.find("div", {"id": "message"})
+            if result:
+                result_str = ' '.join(result.get_text().split())
+                print('!'*len(result_str))
+                print(result_str)
+                print('!'*len(result_str))
+
+            os.remove(tmp_f)
         except requests.exceptions.Timeout:
             error_exit("Connection timed out")
         except requests.exceptions.RequestException as e:
@@ -279,5 +340,10 @@ bugz_comment = run_cmd('git request-pull %s %s %s' % (start_c, contrib_url, tag)
 dbg_print(bugz_comment)
 
 dbg_print("Trying to update bugzilla fields for bug %s" % bug_no)
-update_bugz_fields(mvista_id, bugz_pword, bugz_comment)
-print("Successfully posted the merge request on bugzilla. Done.")
+
+if reviewer_ids != 'None':
+    bugz_add_review_req_attachment(mvista_id, bugz_pword, bugz_comment)
+    print("Successfully posted the review request on bugzilla. Done.")
+else:
+    update_bugz_merge_req_fields(mvista_id, bugz_pword, bugz_comment)
+    print("Successfully posted the merge request on bugzilla. Done.")
