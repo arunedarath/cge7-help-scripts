@@ -192,7 +192,7 @@ To send the pull request to the gate-keeper
     The options -n, -s, -r can be used to further refine your pull request.
 
 To send the pull request for review(copying cge-dev)
-    $%(prog)s -b bug_number -rr mvistaid_of_reviwer,cge-dev
+    $%(prog)s -b bug_number --rr mvistaid_of_reviwer,cge-dev
     """)
     parser.add_argument('-b', help='Bug number', required=True, type=int)
     parser.add_argument('-r', help='Patch revision', required=False, type=int)
