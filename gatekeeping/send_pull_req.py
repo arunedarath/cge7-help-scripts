@@ -184,12 +184,21 @@ def mark_start_commit():
 
 def parse_args():
     global bug_no, revision, p_count, start, debug, reviewer_ids
-    parser = argparse.ArgumentParser(description="Perform merge request on CGE7 or CGX repo", usage="send_pull_req.py -b <bug number>")
+    parser = argparse.ArgumentParser(description="Perform merge request on CGE7 or CGX repo",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog = """
+To send the pull request to the gate-keeper
+    $%(prog)s -b bug_number
+    The options -n, -s, -r can be used to further refine your pull request.
+
+To send the pull request for review(copying cge-dev)
+    $%(prog)s -b bug_number -rr mvistaid_of_reviwer,cge-dev
+    """)
     parser.add_argument('-b', help='Bug number', required=True, type=int)
     parser.add_argument('-r', help='Patch revision', required=False, type=int)
     parser.add_argument('-n', help='No of patches you are pushing', required=False, type=int)
     parser.add_argument('-s', help='Start commit for merge request', required=False, type=str)
-    parser.add_argument('--rr', help='Send the merge request for review', metavar='<Reviewer\'s mvista ID>', required=False, type=str)
+    parser.add_argument('--rr', help='Send the merge request for review', required=False, type=str)
     parser.add_argument('-v', help='Print verbose messages', action="store_true")
     args = vars(parser.parse_args())
 
