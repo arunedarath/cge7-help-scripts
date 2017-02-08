@@ -150,7 +150,7 @@ def identify_repo():
     global upstream_br
     identify_user()
     url = run_cmd('git config --get remote.origin.url', "Please run from a valid git repository").splitlines()[0]
-    match = re.compile(mvista_id+'@.*.')
+    match = re.compile('.*'+mvista_id+'@.*.')
     if not (re.match(match, url)):
             error_exit("Not an MV type repo\n")
 
