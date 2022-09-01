@@ -1,4 +1,3 @@
-
 " Uncomment the following to have Vim jump to the last position when
 " reopening a file
 if has("autocmd")
@@ -19,7 +18,11 @@ set ignorecase		" Do case insensitive matching
 set smartcase		" Do smart case matching
 set incsearch		" Incremental search
 set hidden             " Hide buffers when they are abandoned
+set hlsearch
+set ruler
 
+" syntax
+syntax on
 
 nnoremap <silent> <F8> :TlistToggle<CR>
 let Tlist_Exit_OnlyWindow = 1     " exit if taglist is last window open
@@ -118,5 +121,9 @@ function! s:RunShellCommand(cmdline)
   1
 endfunction
 
-" Copy to OS clipboard
-set clipboard=unnamed
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set expandtab
+set backspace=indent,eol,start
+hi Visual term=reverse cterm=reverse guibg=Grey
